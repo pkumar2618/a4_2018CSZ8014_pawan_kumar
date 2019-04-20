@@ -3,6 +3,7 @@ import re
 import cv2
 import numpy as np
 import pandas as pd
+import pickle
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import IncrementalPCA, PCA
 
@@ -72,8 +73,13 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     # # loading the csv for each episode and running the PCA
     files = next(os.walk(root_path))[2]
     files.sort()
+    files_csv = []
+    for x in files:
+        if x.endswith(".csv"):
+            files_csv.append(x)
+
     n_components = n_components
-    episodes = files[:top_n_episodes]
+    episodes = files_csv[:top_n_episodes]
     all_train_XY = pd.DataFrame()
     ipca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
     for train_XY_csv in episodes:
@@ -99,7 +105,41 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     return train_XY, ipca
 
 
+def load_all_dataset_XY(root_path, top_n_episodes):
+    # # loading the csv for each episode and running the PCA
+    files = next(os.walk(root_path))[2]
+    files.sort()
+    files_csv = []
+    for x in files:
+        if x.endswith(".csv"):
+            files_csv.append(x)
+
+    episodes = files_csv[:top_n_episodes]
+    all_train_XY = pd.DataFrame()
+
+    for train_XY_csv in episodes:
+        path = os.path.join(root_path, train_XY_csv)
+        train_XY = pd.read_csv(path)
+        all_train_XY = pd.concat((all_train_XY, train_XY), axis=0)
+
+    return all_train_XY
 
 
+def pickle_store(data, root_path, file_name):
+    # using  binary mode
+    path = os.path.join(root_path, file_name)
+    file_handle = open(path, 'wb')
+
+    pickle.dump(data, file_handle)
+    file_handle.close()
+
+
+def pickle_load(root_path, file_name):
+    # reading using binary mode
+    path = os.path.join(root_path, file_name)
+    file_handle = open(path, 'rb')
+    data = pickle.load(file_handle)
+    file_handle.close()
+    return data
 
 

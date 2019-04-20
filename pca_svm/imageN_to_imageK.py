@@ -7,6 +7,8 @@ import pandas as pd
 
 from utils import frame_reward_to_matrix_XY
 from utils import transforming_with_pca
+from utils import load_all_dataset_XY
+from utils import pickle_store, pickle_load
 
 
 # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
@@ -26,43 +28,24 @@ start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
 # pool.join()
 
 
-# # loading the csv for each episode and running the PCA
-files = next(os.walk(start_path))[2]
-files.sort()
-n_components = 10
-episodes = files[:2]
+"""
+loading the csv for each episode and running the incremental PCA after 
+all the data is loaded, the function returs reduced data_set
+"""
+train_XY_reduced, ipca = transforming_with_pca(root_path = start_path,
+                                             top_n_episodes=2, n_components=10, batch_size=10)
 
-all_train_XY = pd.DataFrame()
-ipca = IncrementalPCA(n_components=n_components, batch_size=10)
-# ipca = IncrementalPCA(n_components=n_components, batch_size=10)
-for train_XY_csv in episodes:
-    path = os.path.join(start_path, train_XY_csv)
-    train_XY = pd.read_csv(path)
-    all_train_XY = pd.concat((all_train_XY, train_XY), axis=0)
+# pickling the reduced dataset
+pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
+pickle_store(ipca, root_path=start_path, file_name="pickle_ipca")
 
-# separating features and rewards
-# print('reading complete')
-train_X = all_train_XY.drop('Y', axis=1).values
-train_Y = all_train_XY['Y'].values
+# loading the pickled dataset
+# train_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_train_XY_reduced")
+# ipca = pickle_load(root_path=start_path, file_name="pickle_ipca")
 
-# scalind data to zero mean, we won't use unit variance here
-data_scaler = StandardScaler(with_std=False)
-train_X = data_scaler.fit_transform(train_X)
-
-#applying pca on the scaled data
-ipca.partial_fit(train_X)
-train_X_reduced = ipca.transform(train_X)
-train_X_reduced = pd.DataFrame(train_X_reduced)
-train_Y = pd.Series(train_Y, name='Y')
-train_XY = pd.concat((train_X_reduced, train_Y), axis=1)
-
-reconstructed_X = ipca.inverse_transform(train_X_reduced.values)
-error_curr = mean_squared_error(reconstructed_X, train_X)
-print("sequenctial error", error_curr)
-
-fn_train_XY, fn_ipca = transforming_with_pca(root_path = start_path,
-                                             top_n_episodes = 2, n_components =10, batch_size=10)
-fn_train_X_reduced = fn_train_XY.drop('Y', axis = 1).values
-fn_reconstructed_X = fn_ipca.inverse_transform(fn_train_X_reduced)
-fn_error_curr = mean_squared_error(fn_reconstructed_X, train_X)
-print("sequenctial error using function", fn_error_curr)
+# # # to measure reconstruction error we need the original dataset
+# train_X_reduced = train_XY_reduced.drop('Y', axis = 1).values
+# reconstructed_X = ipca.inverse_transform(train_X_reduced)
+# train_XY_original = load_all_dataset_XY(root_path=start_path, top_n_episodes=2)
+# error_curr = mean_squared_error(reconstructed_X, train_XY_original.drop('Y', axis=1).values)
+# print("sequential error using function", error_curr)
