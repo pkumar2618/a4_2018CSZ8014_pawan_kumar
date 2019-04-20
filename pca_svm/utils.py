@@ -3,6 +3,9 @@ import re
 import cv2
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import IncrementalPCA, PCA
+
 
 def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
     path = os.path.join(start_path, episode_dir)
@@ -63,3 +66,40 @@ def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
     train_XY = pd.concat((frame_stack, frame_rewards), axis=1)
     train_XY.to_csv(os.path.join(start_path, "train_XY"+episode_dir+".csv"), index=False)
     # print(frame_stack.shape)
+
+
+def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_size=100):
+    # # loading the csv for each episode and running the PCA
+    files = next(os.walk(root_path))[2]
+    files.sort()
+    n_components = n_components
+    episodes = files[:top_n_episodes]
+    all_train_XY = pd.DataFrame()
+    ipca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
+    for train_XY_csv in episodes:
+        path = os.path.join(root_path, train_XY_csv)
+        train_XY = pd.read_csv(path)
+        all_train_XY = pd.concat((all_train_XY, train_XY), axis=0)
+
+    # separating features and rewards
+    # print('reading complete')
+    train_X = all_train_XY.drop('Y', axis=1).values
+    train_Y = all_train_XY['Y'].values
+
+    # scalind data to zero mean, we won't use unit variance here
+    data_scaler = StandardScaler(with_std=False)
+    train_X = data_scaler.fit_transform(train_X)
+
+    # applying pca on the scaled data
+    ipca.partial_fit(train_X)
+    train_X_reduced = ipca.transform(train_X)
+    train_X_reduced = pd.DataFrame(train_X_reduced)
+    train_Y = pd.Series(train_Y, name='Y')
+    train_XY = pd.concat((train_X_reduced, train_Y), axis=1)
+    return train_XY, ipca
+
+
+
+
+
+
