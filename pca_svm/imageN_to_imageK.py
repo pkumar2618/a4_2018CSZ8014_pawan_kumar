@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error
 import numpy as np
 import pandas as pd
 
-# from svmutil import *
+from svmutil import *
 import matplotlib.pyplot as plt
 
 from utils import frame_reward_to_matrix_XY, load_all_dataset_XY
@@ -27,17 +27,17 @@ start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
 # episodes = dirs[:2]
 # pool = mp.Pool(mp.cpu_count())
 # result_objects = [pool.apply_async(frame_reward_to_matrix_XY,
-#                                    args=(start_path, episode_dir, 0.01)) for episode_dir in episodes]
+#                                    args=(start_path, episode_dir, 1)) for episode_dir in episodes]
 # pool.close()
 # pool.join()
 
 
 """
 loading the csv for each episode and running the incremental PCA after 
-all the data is loaded, the function returs reduced data_set
+all the data is loaded, the function returns reduced data_set
 """
-# train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path = start_path,
-#                                              top_n_episodes=2, n_components=10, batch_size=10)
+# train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path=start_path,
+#                                              top_n_episodes=2, n_components=50, batch_size=None)
 
 # pickling the reduced dataset
 # pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
@@ -61,22 +61,70 @@ Sequence sampling
 """
 # the sequence will be known by the first frame in the sequence
 # loading the pickled dataset
-train_XY = pickle_load(root_path=start_path, file_name="pickle_train_XY_reduced")
-# ipca = pickle_load(root_path=start_path, file_name="pickle_ipca")
-
-
-# the train_XY_reduced stores all the episode, separated by -1 in 'Y' label.
-#
-seq_train_XY = train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1,
-                       safe_to_csv=True, root_path=start_path, file_name="seq_train_XY")
-print(seq_train_XY.shape)
+# train_XY = pickle_load(root_path=start_path, file_name="pickle_train_XY_reduced")
+# 
+# # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
+# seq_train_XY = train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1,
+#                        safe_to_csv=True, root_path=start_path, file_name="seq_train_XY")
+# print(seq_train_XY.shape)
 
 
 """
-    binary classifier using linear as well as gaussian SVM
-# """
-#         m = svm_train(train_Y, train_X_normed, '-t 0')
-#         # m = svm_train(train_Y, train_X_normed, '-g 0.05 -t 2')
-#
-#         svm_predict(test_Y, test_X_normed, m)
-#         p_label, p_acc, p_val, = svm_predict(dev_Y, dev_X_normed, m)
+binary classifier using linear as well as gaussian SVM
+"""
+question_part = 'd'
+if question_part == 'd': ## parameter tunning
+        train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
+        print(train_XY.shape)
+
+        ## creating a validation set
+        dev_set = train_XY.sample(frac=0.1, replace = False, random_state=1, axis=0)
+        train_XY = train_XY.drop(labels=dev_set.index)
+
+        train_X = train_XY.drop('Y',axis=1).to_numpy(copy=True)
+        train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
+        dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
+        dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
+
+        dev_acc_lin = []
+        dev_acc_gauss = []
+        # train_acc = []
+        cost_c = [1e-5, 1e-3, 1, 5, 10]
+        cwd = os.getcwd()
+        for c in cost_c:
+            # m = svm_train(train_Y, train_X_normed, '-t 0')
+            param_string_lin = '-t 2 -c %f' % c
+            param_string_gauss = '-g 0.05 -t 2 -c %f' % c
+
+            m_lin = svm_train(train_Y, train_X, param_string_lin)
+            m_gauss = svm_train(train_Y, train_X, param_string_gauss)
+
+            p_label_lin, p_acc_lin, p_val_lin, = svm_predict(dev_Y, dev_X, m_lin)
+            p_label_gauss, p_acc_gauss, p_val_gauss, = svm_predict(dev_Y, dev_X, m_gauss)
+
+            dev_acc_lin.append(p_acc_lin[0])
+            dev_acc_gauss.append(p_acc_gauss[0])
+
+        print('dev_acc_lin', dev_acc_lin)
+        print('dev_acc_gauss', dev_acc_gauss)
+        # print('test_acc', test_acc)
+
+        fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+        # ax3 = fig1.add_subplot(grid[1, :])
+
+        line1 = ax1.plot(cost_c, dev_acc_lin, label='validation accuracy linear SVM with c')
+        ax1.legend()
+        ax1.set_xlabel("parameter C")
+        ax1.set_ylabel("accuracy")
+        ax1.set_title("accuracy vs for linear SVM")
+
+        line2 = ax2.plot(cost_c, dev_acc_gauss, label='validation accuracy with gaussian kernel with c')
+        ax2.legend()
+        ax2.set_xlabel("parameter C")
+        ax2.set_ylabel("accuracy")
+        ax2.set_title("accuracy for Gaussina SVM")
+
+        plt.tight_layout()
+        fig_name = os.path.join(cwd, "lin_gauss_svm_accuracy_with_c")
+        plt.savefig(fig_name, format='png')
+        plt.show()
