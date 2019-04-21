@@ -75,8 +75,10 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     files = next(os.walk(root_path))[2]
     files.sort()
     files_csv = []
+    pattern = re.compile("train_XY[\d]+\.csv")
     for x in files:
-        if x.endswith(".csv"):
+        # if x.endswith(".csv"):
+        if pattern.match(x):
             files_csv.append(x)
 
     n_components = n_components
