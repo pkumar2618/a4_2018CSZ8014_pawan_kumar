@@ -1,5 +1,6 @@
 import os
 import re
+import random
 import cv2
 import numpy as np
 import pandas as pd
@@ -102,8 +103,55 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     train_X_reduced = pd.DataFrame(train_X_reduced)
     train_Y = pd.Series(train_Y, name='Y')
     train_XY = pd.concat((train_X_reduced, train_Y), axis=1)
-    return train_XY, ipca
+    return train_XY, ipca, data_scaler
 
+
+def train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1, safe_to_csv=True, root_path=None, file_name="seq_train_XY"):
+    train_Y = train_XY.loc[:, 'Y']
+    train_X = train_XY.drop('Y', axis=1)
+    episodes_boundaries = train_Y[train_Y[:] == y_at_start_of_episode].index.tolist()
+    frame_size = train_XY.shape[1] - 1
+    seq_stack = np.array([[]])
+    seq_rewards = np.array([])
+    m_data_size = train_Y.size
+    for e_start in range(len(episodes_boundaries)):
+        if e_start == (len(episodes_boundaries) - 1):  # the last episode
+            episode_seq_ids = train_Y[episodes_boundaries[e_start]:m_data_size - 7].index.tolist()
+        else:
+            episode_seq_ids = train_Y[episodes_boundaries[e_start]:episodes_boundaries[e_start + 1] - 7].index.tolist()
+
+        for i in episode_seq_ids:  # get the indices for an episode
+            try:
+                seq_rewards = np.append(seq_rewards,
+                                        train_Y.iloc[i + 7])  # reward for a sequence is reaward at the 10th frame
+            except IndexError:
+                print("frame for reward not found, index error")
+
+            # creating the matrix from the image sequence a vector of length (5)*pixcels
+            # the rows(m) are different sequences and columns are features obtained by flattening (5) frames
+            # in the sequence
+            seq_vector = np.array([])
+            indices_after_missed_two = random.sample([x for x in range(6)], 4)  # the 7ths frame always stays
+            indices_after_missed_two.sort()
+            for j in indices_after_missed_two:
+                frame_vector = train_X.iloc[i + j, :]
+                seq_vector = np.append(seq_vector, frame_vector)
+            # and the last frame
+            frame_vector = train_X.iloc[i + 6, :]
+            seq_vector = np.append(seq_vector, frame_vector)
+            # stacking the sequences
+            seq_stack = np.append(seq_stack, seq_vector)
+
+    seq_rewards = seq_rewards.reshape(-1, 1)
+    seq_stack = seq_stack.reshape(-1, 5 * frame_size)
+
+    seq_stack = pd.DataFrame(seq_stack)
+    seq_rewards = pd.Series(seq_rewards.flatten(), name="Y")
+
+    train_XY = pd.concat((seq_stack, seq_rewards), axis=1)
+    if safe_to_csv == True:
+        train_XY.to_csv(os.path.join(root_path, file_name), index=False)
+    return train_XY
 
 def load_all_dataset_XY(root_path, top_n_episodes):
     # # loading the csv for each episode and running the PCA
