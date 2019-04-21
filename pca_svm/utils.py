@@ -84,7 +84,8 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     n_components = n_components
     episodes = files_csv[:top_n_episodes]
     all_train_XY = pd.DataFrame()
-    ipca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
+    #ipca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
+    ipca = PCA(n_components=n_components)
     for train_XY_csv in episodes:
         path = os.path.join(root_path, train_XY_csv)
         train_XY = pd.read_csv(path)
@@ -100,7 +101,8 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
     train_X = data_scaler.fit_transform(train_X)
 
     # applying pca on the scaled data
-    ipca.partial_fit(train_X)
+    # ipca.partial_fit(train_X)
+    ipca.fit(train_X)
     train_X_reduced = ipca.transform(train_X)
     train_X_reduced = pd.DataFrame(train_X_reduced)
     train_Y = pd.Series(train_Y, name='Y')
