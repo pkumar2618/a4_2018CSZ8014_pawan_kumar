@@ -1,4 +1,5 @@
 import os
+import sys
 import multiprocessing as mp
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import IncrementalPCA, PCA
@@ -15,7 +16,10 @@ from utils import frame_reward_to_matrix_XY, load_all_dataset_XY
 from utils import transforming_with_pca, train_XY_to_seq_XY
 from utils import pickle_store, pickle_load
 
-
+question_part = int(sys.argv[1])
+# 9: is tune
+# 0: train
+# 1: is predict
 
 # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
 start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
@@ -74,27 +78,27 @@ Sequence sampling
 """
 binary classifier using linear as well as gaussian SVM
 """
-question_part = 'd'
-if question_part == 'd': ## parameter tunning
+# question_part = 'd'
+if question_part == 9: ## parameter tunning
         train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
         print(train_XY.shape)
 
         ## creating a validation set
-        dev_set = train_XY.sample(frac=0.03, replace = False, random_state=1, axis=0)
-        train_XY = train_XY.drop(labels=dev_set.index)
-        # train_XY = train_XY.sample(frac=0.5, replace = False, random_state=1, axis=0)
+        # dev_set = train_XY.sample(frac=0.03, replace = False, random_state=1, axis=0)
+        # train_XY = train_XY.drop(labels=dev_set.index)
+        train_XY = train_XY.sample(frac=0.5, replace = False, random_state=1, axis=0)
         train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
         train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
-        dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
-        dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
+        # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
+        # dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
-        dev_acc_lin = []
-        dev_acc_gauss = []
-        dev_f1_score_lin = []
-        dev_f1_score_gauss = []
+        # dev_acc_lin = []
+        # dev_acc_gauss = []
+        # dev_f1_score_lin = []
+        # dev_f1_score_gauss = []
         # train_acc = []
-        cost_c = [1e-5, 1e-3, 1, 5, 10]
-        cwd = os.getcwd()
+        # cost_c = [1e-5, 1e-3, 1, 5, 10]
+        # cwd = os.getcwd()
         # for c in cost_c:
         #     # m = svm_train(train_Y, train_X_normed, '-t 0')
         #     param_string_lin = '-h 0 -t 0 -c %f' % c
@@ -166,14 +170,48 @@ if question_part == 'd': ## parameter tunning
         print('Best Kernel:', clf.best_estimator_.kernel)
         print('Best Gamma:', clf.best_estimator_.gamma)
 
+
+
+if question_part == 0:
         # train the model with new set
+        train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
+        dev_set = train_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
+        train_XY = train_XY.drop(labels=dev_set.index)
+        # train_XY = train_XY.sample(frac=0.2, replace = False, random_state=1, axis=0)
+
+        train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
+        train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
+
+        dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
+        dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
+
         best_clf = svm.SVC(C=1e-7, kernel='linear', class_weight='balanced', random_state=0)
         best_clf.fit(train_X, train_Y)
-        dev_mean_score = best_clf.score(dev_X, dev_Y)
-        print('dev mean accuracy', dev_mean_score)
 
+        train_mean_score = best_clf.score(train_X, train_Y)
+        print('train mean accuracy', train_mean_score)
         pickle_store(best_clf, root_path=start_path, file_name="svm_best_clf")
+
+        # predict accuracy
+        train_Y_pred = best_clf.predict(train_X)
+        train_f1_score = f1_score(train_Y, train_Y_pred, average='binary')
+        print('train f1-score accuracy', train_f1_score)
 
         dev_Y_pred = best_clf.predict(dev_X)
         dev_f1_score = f1_score(dev_Y, dev_Y_pred, average='binary')
         print('dev f1-score accuracy', dev_f1_score)
+
+if question_part == 7:
+        # test set prediction
+        best_clf = pickle_load(root_path=start_path, file_name="svm_best_clf")
+        test_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
+        test_XY = test_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
+        print(test_XY.shape)
+        test_X = test_XY.drop('Y', axis=1).to_numpy(copy=True)
+        test_Y = test_XY.loc[:, 'Y'].to_numpy(copy=True)
+
+
+        # predict accuracy
+        test_Y_pred = best_clf.predict(test_X)
+        test_f1_score = f1_score(test_Y, test_Y_pred, average='binary')
+        print('test f1-score accuracy', test_f1_score)
