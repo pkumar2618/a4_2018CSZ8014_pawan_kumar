@@ -22,9 +22,9 @@ question_part = int(sys.argv[1])
 # 1: is predict
 
 # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
-start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
+# start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
 # path = '/home/dell/Documents/2nd_sem/ml_assig/train_dataset/00000001/'
-# start_path = '/home/pawan/train_dataset/'
+start_path = '/home/pawan/train_dataset/'
 
 # results = []  # used to store the result of async processes
 # # # running parallel processes to get images stored as matrix of grayscale pixel.
@@ -81,12 +81,11 @@ binary classifier using linear as well as gaussian SVM
 # question_part = 'd'
 if question_part == 9: ## parameter tunning
         train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
-        print(train_XY.shape)
-
         ## creating a validation set
         # dev_set = train_XY.sample(frac=0.03, replace = False, random_state=1, axis=0)
         # train_XY = train_XY.drop(labels=dev_set.index)
-        train_XY = train_XY.sample(frac=0.5, replace = False, random_state=1, axis=0)
+        train_XY = train_XY.sample(frac=0.15, replace = False, random_state=1, axis=0)
+        print(train_XY.shape)
         train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
         train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
         # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
@@ -157,8 +156,11 @@ if question_part == 9: ## parameter tunning
         # fig_name = os.path.join(cwd, "lin_gauss_svm_accuracy_with_c")
         # plt.savefig(fig_name, format='png')
         # plt.show()
-        parameter_candidates = [{'C': [1e-7, 1e-5, 1e-2, 1], 'kernel': ['linear']},
-                                {'C': [1e-7, 1e-5, 1e-2, 1], 'gamma': [1e-5, 1e-3], 'kernel': ['rbf']},
+        # parameter_candidates = [{'C': [1e-7, 1e-5, 1e-2, 1, 5, 10], 'kernel': ['linear']},
+        #                        {'C': [1e-7, 1e-5, 1e-2, 1, 5, 10], 'gamma': [1e-5, 1e-3, 1e-2, 1e-1, 1], 'kernel': ['rbf']},
+        #                        ]
+        parameter_candidates = [{'C': [1e-2, 1, 1.5], 'kernel': ['linear']},
+                                {'C': [1e-2, 1, 1.5], 'gamma': [1e-15, 1e-10, 10, 1000], 'kernel': ['rbf']},
                                 ]
         clf = GridSearchCV(estimator=svm.SVC(), param_grid=parameter_candidates, n_jobs=-1)
         clf.fit(train_X, train_Y)
@@ -175,9 +177,10 @@ if question_part == 9: ## parameter tunning
 if question_part == 0:
         # train the model with new set
         train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
-        dev_set = train_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
+        dev_set = train_XY.sample(frac=0.05, replace=False, random_state=1, axis=0)
         train_XY = train_XY.drop(labels=dev_set.index)
-        # train_XY = train_XY.sample(frac=0.2, replace = False, random_state=1, axis=0)
+        train_XY = train_XY.sample(frac=0.90, replace = False, random_state=1, axis=0)
+        print(train_XY.shape)
 
         train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
         train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
@@ -185,12 +188,12 @@ if question_part == 0:
         dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
         dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
-        best_clf = svm.SVC(C=1e-7, kernel='linear', class_weight='balanced', random_state=0)
+        best_clf = svm.SVC(C=0.01, kernel='linear', class_weight='balanced', random_state=0)
         best_clf.fit(train_X, train_Y)
 
         train_mean_score = best_clf.score(train_X, train_Y)
         print('train mean accuracy', train_mean_score)
-        pickle_store(best_clf, root_path=start_path, file_name="svm_best_clf")
+        pickle_store(best_clf, root_path=start_path, file_name="svm_best_clf_90k")
 
         # predict accuracy
         train_Y_pred = best_clf.predict(train_X)
