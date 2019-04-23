@@ -3,6 +3,7 @@ import os
 import sys
 import gc
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
 # import tensorflow as tf
@@ -70,20 +71,26 @@ if train_test == 0:
     model = model_architecture(input_shape)
     # model.summary()
 
-    batch_size = 25
-    epochs = 300
+    epochs = 20
+    batch_size = 100
 
     # # model configuration
-    model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+    model.compile(loss ='binary_crossentropy', optimizer='adam', metrics = ['accuracy'])
 
     # # model fitting
     training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
+    # # saving the model
+    model.save_weights('cnn_32_64_2k_binary_e20_b100.h5')
+    model.save('cnn_32_64_2k_binary_e20_b100.h5')
+    model.save('cnn_32_64_2k_binary_e_20_b100.model')
+
+    # # plotting accuracy
     train_acc = training_history.history['acc']
     val_acc = training_history.history['val_acc']
     train_loss = training_history.history['loss']
     val_loss = training_history.history['val_acc']
-    epoch_list = range(1, len(train_acc)) + 1
+    epoch_list = range(1, len(train_acc) + 1)
 
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
     line1 = ax1.plot(epoch_list, train_acc, label='train accuracy')
@@ -105,10 +112,6 @@ if train_test == 0:
     plt.savefig(fig_name, format='png')
     plt.show()
 
-    # # saving the model
-    model.save_weights('cnn_32_64_2k_binary_itr300.h5')
-    model.save('cnn_32_64_2k_binary_itr300.h5')
-    model.save('cnn_32_64_2k_binary_itr300.model')
 
 if train_test == 1:
     # test the trained model
