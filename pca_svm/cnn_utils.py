@@ -154,7 +154,7 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
     # print(seqs_stack.shape, '\n', frame_stack.shape, '\n', frame.shape)
     return seqs_stack, seqs_reward
 
-def load_all_seqs_stack_XY(root_path, top_n_episodes):
+def load_all_seqs_stack_XY(root_path, top_n_episodes=2):
     # # loading the csv for each episode and running the PCA
     """
     read the root directory and create
