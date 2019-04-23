@@ -1,4 +1,3 @@
-
 import os
 import sys
 import gc
@@ -110,7 +109,7 @@ if train_test == 0:
     plt.tight_layout()
     fig_name = os.path.join(start_path, "cnn_loss_curve.png")
     plt.savefig(fig_name, format='png')
-    plt.show()
+#    plt.show()
 
 
 if train_test == 1:

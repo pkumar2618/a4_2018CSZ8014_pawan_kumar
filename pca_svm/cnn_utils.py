@@ -39,35 +39,6 @@ def model_architecture(input_shape=(210, 160, 5)):
 
     return model
 
-# def seqs_matrix_to_seqs_stack(seqs_matrix_XY=pd.DataFrame(), frames_in_seq = 5, frame_shape=None):
-#     """
-#
-#     :param seqs_matrix_XY: matrix of number of seqence, where 5*frame_size are columns
-#     :param frames_in_seq:
-#     :param frame_shape:
-#     :return:
-#     """
-#     frame_size = seqs_matrix_XY.shape[1] / frames_in_seq
-#     seqs_matrix_X = seqs_matrix_XY.drop('Y', axis=1).to_numpy(copy=True)
-#     seqs_matrix_Y = seqs_matrix_XY.loc[:,'Y'].to_numpy(copy=True)
-#     n_samples = seqs_matrix_XY.shape[0]
-#
-#     if frame_shape != None:
-#         frame_shape = frame_shape
-#     else:
-#         frame_shape = [frame_size/2, frame_size/2]
-#
-#     seqs_stack_X = np.array()
-#     seqs_stack_Y = np.array()
-#     # frame_stack = np.array()
-#     for i in range(n_samples):
-#         frame_stack = seqs_matrix_X[i,:].reshape((frame_shape,frames_in_seq))
-#         seqs_stack_X = np.append(seqs_stack_X, frame_stack)
-#         seqs_stack_Y = np.append(seqs_stack_Y, seqs_matrix_Y[i])
-#
-#     return (seqs_stack_X, seqs_stack_Y)
-
-
 def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
     # # # can be called in paralle to get images and store as stack of sequences where each stack is stack of frames
     # as matrix of grayscale pixel.
