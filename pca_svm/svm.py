@@ -9,7 +9,7 @@ from sklearn.model_selection import learning_curve, GridSearchCV
 import numpy as np
 import pandas as pd
 
-# from svmutil import *
+from svmutil import *
 import matplotlib.pyplot as plt
 
 from utils import frame_reward_to_matrix_XY, load_all_dataset_XY
@@ -20,14 +20,14 @@ train_test = int(sys.argv[1])
 # 9: is tune
 # 0: train
 # 1: is predict
+train_test_lib = sys.argv[2]
+start_path = sys.argv[3]
 
-start_path = sys.argv[2]
-n_episodes = int(sys.argv[3])
 
 # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
 # start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
 # path = '/home/dell/Documents/2nd_sem/ml_assig/train_dataset/00000001/'
-start_path = '/home/pawan/train_dataset/'
+# start_path = '/home/pawan/train_dataset/'
 
 if train_test == 9:
 
@@ -46,12 +46,10 @@ if train_test == 9:
 
         # the sequence will be known by the first frame in the sequence
         # # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
-        seq_train_XY = train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1,
+        seq_train_XY = train_XY_to_seq_XY(train_XY_reduced, y_at_start_of_episode=-1,
                                safe_to_csv=True, root_path=start_path, file_name="seq_train_XY")
         # print(seq_train_XY.shape)
 
-
-        ## parameter tunning using grid search
 
         train_XY = seq_train_XY
         ## creating a validation set
@@ -61,50 +59,8 @@ if train_test == 9:
         # print(train_XY.shape)
         train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
         train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
-        # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
-        # dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
-        # dev_acc_lin = []
-        # dev_acc_gauss = []
-        # dev_f1_score_lin = []
-        # dev_f1_score_gauss = []
-        # train_acc = []
-        # cost_c = [1e-5, 1e-3, 1, 5, 10]
-        # cwd = os.getcwd()
-        # for c in cost_c:
-        #     # m = svm_train(train_Y, train_X_normed, '-t 0')
-        #
-        # # fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
-        # fig, (ax3, ax4) = plt.subplots(nrows=1, ncols=2)
-        # # line1 = ax1.plot(cost_c, dev_acc_lin, label='validation accuracy linear SVM with c')
-        # # ax1.legend()
-        # # ax1.set_xlabel("parameter C")
-        # # ax1.set_ylabel("accuracy")
-        # # ax1.set_title("accuracy vs C for linear SVM")
-        # #
-        # # line2 = ax2.plot(cost_c, dev_acc_gauss, label='validation accuracy with gaussian kernel with c')
-        # # ax2.legend()
-        # # ax2.set_xlabel("parameter C")
-        # # ax2.set_ylabel("accuracy")
-        # # ax2.set_title("accuracy vs C for Gaussina SVM")
-        #
-        # # f1_scores
-        # line3 = ax3.plot(cost_c, dev_f1_score_lin, label='validation f1-score linear SVM with c')
-        # ax3.legend()
-        # ax3.set_xlabel("parameter C")
-        # ax3.set_ylabel("f1-score (weighted average)")
-        # ax3.set_title("f1-score vs C for linear SVM")
-        #
-        # line4 = ax4.plot(cost_c, dev_f1_score_gauss, label='validation accuracy with gaussian kernel with c')
-        # ax4.legend()
-        # ax4.set_xlabel("parameter C")
-        # ax4.set_ylabel("f1-score (weighted average)")
-        # ax4.set_title("f1-score vs C for Gaussina SVM")
-        #
-        # plt.tight_layout()
-        # fig_name = os.path.join(cwd, "lin_gauss_svm_accuracy_with_c")
-        # plt.savefig(fig_name, format='png')
-        # plt.show()
+        ## parameter tunning using grid search
 
         # parameter_candidates = [{'C': [1e-7, 1e-5, 1e-2, 1, 5, 10], 'kernel': ['linear']},
         #                        {'C': [1e-7, 1e-5, 1e-2, 1, 5, 10], 'gamma': [1e-5, 1e-3, 1e-2, 1e-1, 1], 'kernel': ['rbf']},
@@ -129,8 +85,6 @@ if train_test == 0:
         if train_test_lib == "libsvm":
                 # train the model with new set
                 train_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_train_XY_reduced")
-                # ipca = pickle_load(root_path=start_path, file_name="pickle_ipca")
-                data_scaler = pickle_load(root_path=start_path, file_name="pickle_data_scaler")
 
                 # the sequence will be known by the first frame in the sequence
                 # # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
@@ -140,25 +94,26 @@ if train_test == 0:
                 train_XY = seq_train_XY
                 # train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
 
-                # dev_set = train_XY.sample(frac=0.05, replace=False, random_state=1, axis=0)
-                # train_XY = train_XY.drop(labels=dev_set.index)
-                train_XY = train_XY.sample(frac=0.90, replace=False, random_state=1, axis=0)
+                dev_set = train_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
+                train_XY = train_XY.drop(labels=dev_set.index)
+                # train_XY = train_XY.sample(frac=0.80, replace=False, random_state=1, axis=0)
                 train_XY_size = train_XY.shape[0]
                 train_X = train_XY.drop('Y', axis=1).to_numpy(copy=True)
                 train_Y = train_XY.loc[:, 'Y'].to_numpy(copy=True)
 
-                # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
-                # dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
+                dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
+                dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
                 # the classifier linear
                 param_string_lin = '-h 0 -t 0 -c 0.01'
                 m_lin = svm_train(train_Y, train_X, param_string_lin)
                 p_label_lin, p_acc_lin, p_val_lin, = svm_predict(dev_Y, dev_X, m_lin)
-                dev_acc_lin.append(p_acc_lin[0])
-                dev_f1_score_lin.append(f1_score(dev_Y, p_label_lin, average='binary'))
+                dev_acc_lin = p_acc_lin[0]
+                dev_f1_score_lin = f1_score(dev_Y, p_label_lin, average='binary')
+
                 print('dev_acc_lin', dev_acc_lin)
                 print('dev_f1_score_lin', dev_f1_score_lin)
-                svm_save_model('libsvm_lin.model', m)
+                svm_save_model('libsvm_lin.model', m_lin)
 
                 # # gaussing classifier
                 # param_string_gauss = '-h 0 -g 0.05 -t 2 -c %f' % c
@@ -189,7 +144,7 @@ if train_test == 0:
                                                   safe_to_csv=True, root_path=start_path, file_name="seq_train_XY")
 
                 train_XY = seq_train_XY
-                train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
+                # train_XY = pd.read_csv(os.path.join(start_path, "seq_train_XY"))
 
                 # dev_set = train_XY.sample(frac=0.05, replace=False, random_state=1, axis=0)
                 # train_XY = train_XY.drop(labels=dev_set.index)
@@ -239,7 +194,7 @@ if train_test == 1:
                 # test set prediction
                 # best_clf = svm_load_model('libsvm_lin.model')
 
-                ## using sklearr
+                ## using sklearn
                 best_clf = pickle_load(root_path=start_path, file_name="svm_best_clf")
                 # predict accuracy
                 test_Y_pred = best_clf.predict(test_X)
