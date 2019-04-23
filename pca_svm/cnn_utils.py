@@ -4,23 +4,30 @@ import random
 import cv2
 import pandas as pd
 import pickle
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+
+# from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D
 
 
-def model_architecture():
+def model_architecture(input_shape=(210, 160, 5)):
     """
     defing  model and stacking the layers
     :return:
     """
     model = Sequential()
     # first layer
-    model.add(Conv2D(32, (3, 3), strides = (2,2), input_shape=train_X.shape[1:], padding='valid'))
+    model.add(Conv2D(32, (3, 3), strides=(2, 2), input_shape=input_shape, padding='same'))
     model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size= (2,2), strides=2, border_modes='valid'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=2))
 
     # second layer
-    model.add(Conv2D(64, (3, 3), strides = (2,2), input_shape=train_X.shape[1:], padding='valid'))
+    model.add(Conv2D(64, (3, 3), strides=(2, 2), padding='valid'))
     model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size= (2,2), strides=2, border_modes='valid'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=2))
 
     # fully connected layer
     model.add(Flatten())
@@ -97,26 +104,48 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
     # reading all the images in bunch of 5 and stakcing them up in RGB channel
     # the rows(m) are number of sequences made of stack of frames
 
-    seqs_reward = []
-    seqs_stack = []
+    # seqs_reward = []
+    # seqs_stack = []
+    seqs_reward = np.array([])
+    seqs_stack = np.array([])
 
     for i in data_set_indices:
         frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
         frame_id = int(frame_id[0])
-        frame_stack = []
+        # frame_stack = []
+        frame_stack = np.array([])
+        # frame = cv2.imread(os.path.join(path, files_png[frame_id + 6]))
+        # frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) / 255)
+        # frame_stack = np.expand_dims(frame, axis=2)
+
         indices_after_missed_two = random.sample([x for x in range(6)], 4)  # the 7ths frame always stays
         indices_after_missed_two.sort()
-        # indices_after_missed_two_last = indices_after_missed_two.append(6)
         indices_after_missed_two.append(6)
+
         for j in indices_after_missed_two:
+            # print(frame_stack.shape)
             frame = cv2.imread(os.path.join(path, files_png[frame_id+j]))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255
+            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = np.expand_dims(frame, axis=2)
+            if frame_stack.size == 0:
+                frame_stack = np.copy(frame)
+            else:
+                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+
             # cv2.imshow('grayed image', frame)
             # cv2.waitKey(0)
-            frame_stack.append(frame)
+            # frame_stack = np.stack((frame_stack, frame), axis=2)
 
-        seqs_reward.append(rewards[frame_id + j])
-        seqs_stack.append(frame_stack)
+        frame_stack = np.expand_dims(frame_stack, axis=3)
+        # seqs_reward.append(rewards[frame_id + j])
+        # seqs_stack.append(frame_stack)
+
+        if seqs_stack.size == 0:
+            seqs_stack = np.copy(frame_stack)
+            seqs_reward = np.concatenate((seqs_reward, rewards[frame_id + j]))
+        else:
+            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
+            seqs_reward = np.concatenate((seqs_reward, rewards[frame_id + j]))
 
     seqs_stack_XY = (seqs_stack, seqs_reward)
     file_name = "pickle_seq_stack_XY"+episode_dir
@@ -151,8 +180,8 @@ def load_all_seqs_stack_XY(root_path, top_n_episodes):
 
     for seqs_stack_XY in episodes[1:]:
         temp_seqs_stack_X, temp_seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
-        seqs_stack_X.append(temp_seqs_stack_X)
-        seqs_stack_Y.append(temp_seqs_stack_Y)
+        seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
+        seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
 
     return seqs_stack_X, seqs_stack_Y
 

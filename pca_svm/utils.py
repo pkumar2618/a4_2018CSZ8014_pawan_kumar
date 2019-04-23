@@ -10,6 +10,14 @@ from sklearn.decomposition import IncrementalPCA, PCA
 
 
 def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
+    # # # running parallel processes to get images stored as matrix of grayscale pixel.
+    """
+    the first frame of an episode has its rewards set as -1
+    :param start_path:
+    :param episode_dir:
+    :param sample_fraction: how much of the frames in the episodes has to be read, another way to randomly select
+    :return:
+    """
     path = os.path.join(start_path, episode_dir)
     files = os.listdir(path)
     files.sort()
@@ -72,12 +80,15 @@ def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
 
 def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_size=100):
     # # loading the csv for each episode and running the PCA
+    """
+    loading the csv for each episode having images stored in grayscale, and running the incremental PCA after
+    all the data is loaded, the function returns reduced data_set
+    """
     files = next(os.walk(root_path))[2]
     files.sort()
     files_csv = []
     pattern = re.compile("train_XY[\d]+\.csv")
     for x in files:
-        # if x.endswith(".csv"):
         if pattern.match(x):
             files_csv.append(x)
 
@@ -111,6 +122,15 @@ def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_siz
 
 
 def train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1, safe_to_csv=True, root_path=None, file_name="seq_train_XY"):
+    # the sequence will be known by the first frame in the sequence
+    """
+    :param train_XY: contains pca tranasformed images with their rewards,
+    :param y_at_start_of_episode: the first frame in an episodes has reward stored as -1
+    :param safe_to_csv:
+    :param root_path:
+    :param file_name:
+    :return: saves the csv which is in sequence
+    """
     train_Y = train_XY.loc[:, 'Y']
     train_X = train_XY.drop('Y', axis=1)
     episodes_boundaries = train_Y[train_Y[:] == y_at_start_of_episode].index.tolist()
@@ -159,11 +179,18 @@ def train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1, safe_to_csv=True, roo
 
 def load_all_dataset_XY(root_path, top_n_episodes):
     # # loading the csv for each episode and running the PCA
+    """
+    read the root directory and create
+    :param root_path:
+    :param top_n_episodes:
+    :return:
+    """
     files = next(os.walk(root_path))[2]
     files.sort()
     files_csv = []
+    pattern = re.compile("train_XY[\d]+\.csv")
     for x in files:
-        if x.endswith(".csv"):
+        if pattern.match(x):
             files_csv.append(x)
 
     episodes = files_csv[:top_n_episodes]
