@@ -7,10 +7,10 @@ import pandas as pd
 import pickle
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import IncrementalPCA, PCA
-
+SEED = 0
 
 def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
-    # # # running parallel processes to get images stored as matrix of grayscale pixel.
+    # # # this function may be used to run parallel process to get images stored as matrix of grayscale pixel.
     """
     the first frame of an episode has its rewards set as -1
     :param start_path:
@@ -77,6 +77,89 @@ def frame_reward_to_matrix_XY(start_path, episode_dir, sample_fraction=0.1):
     train_XY.to_csv(os.path.join(start_path, "train_XY"+episode_dir+".csv"), index=False)
     # print(frame_stack.shape)
 
+def frame_reward_to_matrix_XY_test_type1(start_path, sample_fraction=1):
+    """
+    type 1 assumes that each episodes has only 5 frames.
+    :param start_path:
+    :param sample_fraction: how much of the frames in the episodes has to be read, another way to randomly select
+    :return:
+    """
+    dirs = next(os.walk(start_path))[1]
+    files = next(os.walk(start_path))[2]
+    dirs.sort()
+
+    ### finding the rewards, assuming the reward.csv is in the start_path
+    pattern = re.compile("rew[a-zA-Z]+\\.csv")
+    for x in files:
+        if pattern.match(x):
+            rewards = pd.read_csv(os.path.join(start_path, x), header=None, index_col=0)
+            rewards = rewards.values
+            rewards = rewards.astype('f')
+            break
+
+    # selecting only a fraciton of episodes useful during debugging
+    m_dirs_contained = len(dirs)
+    t_frac = sample_fraction
+    test_population = int(t_frac * m_dirs_contained)
+
+    # when selecting random dirs
+    random.seed(SEED)
+    episodes_indices = random.sample([x for x in range(m_dirs_contained)], test_population, )
+    # not random
+    # episodes_indices = [x for x in range(test_population)]
+
+    # the sequence will be identified by the dir_id
+    # reading all the episode and creating sequence from it
+    # the rows(m) are different frames and columns are features obtained by flattening a single frame
+    # we will only return frames stacks in order from each episodes, so that it can be scaled using
+    # data_scaler used for training data during transforming in to PCA
+    frame_rewards = np.array([])
+    frame_stack = np.array([], dtype='f')
+
+    for d in episodes_indices:
+        dir_id = int(dirs[d])
+        path = os.path.join(start_path, dirs[d])
+        files = os.listdir(path)
+        files_png = []
+        # only take .png files
+        for x in files:
+            if x.endswith(".png"):
+                files_png.append(x)
+
+        n_files_contained = len(files_png)
+        files_png.sort() # files_png might have files stored in a random order
+        for i in range(0, n_files_contained, 5):
+            frame_id = re.split("[.]", files_png[i])
+            frame_id = int(frame_id[0])
+            if len(frame_rewards) == 0:
+                frame_rewards = rewards[dir_id]
+            else:
+                frame_rewards = np.append(frame_rewards, rewards[dir_id])  # reward from same episode considred same
+
+            #stacking up images taking 5 in order
+            for j in range(5):
+                frame = cv2.imread(os.path.join(path, files_png[i+j]))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                frame = np.array(frame, dtype='f').flatten() / 255
+                frame = frame.reshape(1, -1)
+                # frame = np.stack(frame, axis=0)
+                # cv2.imshow('grayed image', frame)
+                # cv2.waitKey(0)
+                if frame_stack.size == 0:
+                    frame_stack = frame
+                else:
+                    frame_stack = np.concatenate((frame_stack, frame), axis=0)
+
+    frame_rewards = frame_rewards.reshape(-1, 1).astype(np.float32)
+
+    # Creating a dataframe
+    frame_stack = pd.DataFrame(frame_stack)
+    frame_rewards = pd.Series(frame_rewards.flatten(), name="Y")
+
+    test_XY = (frame_stack, frame_rewards) # pass as tuple
+    pickle_store(test_XY, start_path, "pickle_raw_test_XY_type1_tuple")
+    # train_XY.to_csv(os.path.join(start_path, "raw_test_XY.csv"), index=False)
+    # print(frame_stack.shape)
 
 def transforming_with_pca(root_path, top_n_episodes, n_components =10, batch_size=100):
     # # loading the csv for each episode and running the PCA
@@ -176,6 +259,53 @@ def train_XY_to_seq_XY(train_XY, y_at_start_of_episode=-1, safe_to_csv=True, roo
     if safe_to_csv == True:
         train_XY.to_csv(os.path.join(root_path, file_name), index=False)
     return train_XY
+
+def test_XY_to_seq_XY_type1(test_XY, root_path, save_to_csv=True, file_name="seq_test_XY_type1"):
+    # type-1 assumes that each episodes has only 5 frames or multiple of 5
+    # and reward is identified by its directory
+    # 5 times as many frames as the number of rewards.
+    """
+    :param test_XY: contains pca tranasformed images with their rewards as tuple,
+    :param save_to_csv:
+    :param root_path:
+    :param file_name: the name to be used to save the sequences
+    :return: saves the csv which is in sequence
+    """
+    test_X, test_Y = test_XY
+    frame_size = test_X.shape[1]
+    seq_stack = np.array([[]])
+    n_frames = test_X.shape[0]
+    n_seq= test_Y.size
+    seq_rewards = test_Y
+    seq_vector = np.array([])
+    frame_vector = np.array([])
+    for i in range(0, n_frames, 5):
+        seq_vector = np.array([])
+        for j in range(5):
+            frame_vector = test_X[i + j, :]
+            if frame_vector.size == 0:
+                seq_vector = frame_vector
+            else:
+                seq_vector = np.append(seq_vector, frame_vector)  # this will be flattend
+
+        # stacking the sequences
+        if seq_stack.size == 0:
+            seq_vector = seq_vector.reshape(1, -1)
+            seq_stack = seq_vector
+        else:
+            seq_vector = seq_vector.reshape(1, -1)
+            seq_stack = np.concatenate((seq_stack, seq_vector), axis=0)
+
+    seq_rewards = seq_rewards.reshape(-1, 1)
+    # seq_stack = seq_stack.reshape(-1, 5 * frame_size) # don't require reshaping
+
+    seq_stack = pd.DataFrame(seq_stack)
+    seq_rewards = pd.Series(seq_rewards.flatten(), name="Y")
+
+    test_XY = pd.concat((seq_stack, seq_rewards), axis=1)
+    if save_to_csv == True:
+        test_XY.to_csv(os.path.join(root_path, file_name), index=False)
+    # return test_XY
 
 def load_all_dataset_XY(root_path, top_n_episodes):
     # # loading the csv for each episode and running the PCA

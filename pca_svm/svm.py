@@ -9,11 +9,11 @@ from sklearn.model_selection import learning_curve, GridSearchCV
 import numpy as np
 import pandas as pd
 
-from svmutil import *
+# from svmutil import *
 import matplotlib.pyplot as plt
 
 from utils import frame_reward_to_matrix_XY, load_all_dataset_XY
-from utils import transforming_with_pca, train_XY_to_seq_XY
+from utils import transforming_with_pca, train_XY_to_seq_XY, test_XY_to_seq_XY_type1
 from utils import pickle_store, pickle_load
 
 train_test = int(sys.argv[1])
@@ -177,17 +177,18 @@ if train_test == 1:
         " predict test accuracy"
         if train_test_lib == 'libsvm':
                 # load the test_XY_reduced to be made into sequence
-                test_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_test_XY_reduced")
+                test_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_test_XY_reduced_tuple")
 
                 # the sequence will be known by the first frame in the sequence
                 # # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
-                seq_test_XY = train_XY_to_seq_XY(test_XY_reduced, y_at_start_of_episode=-1,
+                test_XY_to_seq_XY_type1(test_XY_reduced,
                                                  safe_to_csv=True, root_path=start_path, file_name="seq_test_XY")
-                test_XY = seq_test_XY
-                # test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY"))
+                # test_XY = seq_test_XY
+                test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY"))
 
                 # test_XY = test_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
                 # print(test_XY.shape)
+
                 test_X = test_XY.drop('Y', axis=1).to_numpy(copy=True)
                 test_Y = test_XY.loc[:, 'Y'].to_numpy(copy=True)
 
@@ -205,14 +206,14 @@ if train_test == 1:
         elif train_test_lib == 'sklearn':
 
                 # load the test_XY_reduced to be made into sequence
-                test_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_test_XY_reduced")
+                test_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_test_XY_reduced_tuple")
 
                 # the sequence will be known by the first frame in the sequence
-                # # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
-                seq_test_XY = train_XY_to_seq_XY(test_XY_reduced, y_at_start_of_episode=-1,
-                                                  safe_to_csv=True, root_path=start_path, file_name="seq_test_XY")
-                test_XY = seq_test_XY
-                # test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY"))
+                # test_XY_reduced is a tuple of test_X_reduced and test_Y
+                test_XY_to_seq_XY_type1(test_XY_reduced,
+                                                  save_to_csv=True, root_path=start_path, file_name="seq_test_XY_type1")
+                # test_XY = seq_test_XY
+                test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY_type1"))
 
                 # test set prediction
                 best_clf = pickle_load(root_path=start_path, file_name="svm_best_clf")
