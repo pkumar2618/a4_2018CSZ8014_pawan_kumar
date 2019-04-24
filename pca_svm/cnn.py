@@ -12,12 +12,11 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D
 from keras import optimizers
 from keras.models import load_model
-from cnn_utils import load_all_seqs_stack_XY, frame_reward_to_seqs_stack_XY
+from cnn_utils import load_all_seqs_stack_XY, frame_reward_to_seqs_stack_XY, pickle_load, pickle_store
 from cnn_utils import model_architecture
 
 train_test = int(sys.argv[1])
 start_path = sys.argv[2]
-n_episodes = int(sys.argv[3])
 
 if train_test == 0:
     # train the model
@@ -28,6 +27,7 @@ if train_test == 0:
     # episode_dir ='00000002'
     # frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1)
 
+    n_episodes = int(sys.argv[3])
     # load all the grayscale images stacke in 5 alog RGB channel, channel second last last,
     seqs_stack_X, seqs_stack_Y = load_all_seqs_stack_XY(start_path, n_episodes)
 
@@ -114,8 +114,47 @@ if train_test == 0:
 
 if train_test == 1:
     # test the trained model
+    # load all the seq stack obtained from frame and club them into one seq stack
+    # n_episodes = int(sys.argv[3])
+    # load all the grayscale images stacke in 5 alog RGB channel, channel second last to last,
+    seqs_stack_X, seqs_stack_Y = pickle_load(root_path=start_path, file_name="pickle_seq_stack_XY_test1_tuple")
+
+    # # see the images first few
+    # for i in range(100, 110):
+    #     for j in range(0, 5):
+    #     # for frame in seqs_stack_X[:, :, :, i]:
+    #         # for frame in seq_stack:
+    #         cv2.imshow('grayed image', seqs_stack_X[:,:,j,i])
+    #         cv2.waitKey(0)
+    #     print(seqs_stack_Y[i])
+    # # print(count, '\n')
+
+    # splitting the data into train and validation test
+    m_samples = seqs_stack_X.shape[3]
+    # print(seqs_stack_X.shape)
+    m_test = int(m_samples * 1)
+    test_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_test)])
+    test_Y = seqs_stack_Y[:m_test]
+    print(test_X.shape)
+
+    # val_X =np.array([seqs_stack_X[:, :, :, i] for i in range(m_train, m_samples)])
+    # val_Y = seqs_stack_Y[m_train:]
+    # print(val_X.shape)
+
+    # # see the images first few
+    for i in range(1, 10):
+        for j in range(0, 5):
+        # for frame in seqs_stack_X[:, :, :, i]:
+            # for frame in seq_stack:
+            cv2.imshow('grayed image', test_X[i,:,:,j])
+            cv2.waitKey(0)
+        print(test_Y[i])
+
+    input_shape = test_X[0, :, :, :].shape
+    print(input_shape)
+
     # load a saved model
     model = load_model('./cnn_32_64_2k_binary_itr300.model')
 
     # # model evalution on test data
-    model.evaluate(val_X, val_Y)
+    # model.evaluate(val_X, val_Y)

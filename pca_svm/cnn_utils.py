@@ -5,7 +5,7 @@ import cv2
 import pandas as pd
 import pickle
 import numpy as np
-
+SEED = 0
 from sklearn.model_selection import train_test_split
 
 # from keras.preprocessing.image import ImageDataGenerator
@@ -44,7 +44,6 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
     # as matrix of grayscale pixel.
     # create the stack of sequence, the grayscale frames are stacked in RGB channel, channel first
     """
-    the first frame of an episode has its rewards set as -1
     :param start_path:
     :param episode_dir:
     :param sample_fraction: how much of the frames in the episodes has to be read, another way to randomly select
@@ -137,6 +136,121 @@ def load_all_seqs_stack_XY(root_path, top_n_episodes=2):
     files.sort()
     files_seqs_stacks = []
     pattern = re.compile("pickle_seq_stack_XY[\d]")
+    for x in files:
+        if pattern.match(x):
+            files_seqs_stacks.append(x)
+
+    episodes = files_seqs_stacks[:top_n_episodes]
+    # all_train_XY = pd.DataFrame()
+
+    # path = os.path.join(root_path, episodes[0])
+    seqs_stack_X = []
+    seqs_stack_Y = []
+    seqs_stack_X, seqs_stack_Y = pickle_load(root_path, episodes[0])
+
+    for seqs_stack_XY in episodes[1:]:
+        temp_seqs_stack_X, temp_seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
+        seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
+        seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
+
+    return seqs_stack_X, seqs_stack_Y
+
+
+def frame_reward_to_seqs_stack_XY_test1(start_path, sample_fraction=0.1):
+    # # # can be called in paralle to get images and store as stack of sequences where each stack is stack of frames
+    # as matrix of grayscale pixel.
+    # create the stack of sequence, the grayscale frames are stacked in RGB channel, channel first
+    # type1 has only 5 frames in an episodes, and sequence is identified by episodes name
+    """
+    :param start_path:
+    :param episode_dir:
+    :param sample_fraction: how much of the frames in the episodes has to be read, another way to randomly select
+    :return:
+    """
+    dirs = next(os.walk(start_path))[1]
+    files = next(os.walk(start_path))[2]
+    dirs.sort()
+
+    ### finding the rewards, assuming the reward.csv is in the start_path
+    pattern = re.compile("rew[a-zA-Z]+\\.csv")
+    for x in files:
+        if pattern.match(x):
+            rewards = pd.read_csv(os.path.join(start_path, x), header=None, index_col=0)
+            rewards = rewards.values
+            rewards = rewards.astype('f')
+            break
+
+    # selecting only a fraciton of episodes useful during debugging
+    m_dirs_contained = len(dirs)
+    t_frac = sample_fraction
+    test_population = int(t_frac * m_dirs_contained)
+
+    # when selecting random dirs
+    random.seed(SEED)
+    episodes_indices = random.sample([x for x in range(m_dirs_contained)], test_population)
+    # not random
+    # episodes_indices = [x for x in range(test_population)]
+
+    # the sequence will be identified by the last frame in the sequence,
+    # here we will only stack of frames and their rewards using pandas Dataframe, with
+    # reading all the images in bunch of 5 and stakcing them up in RGB channel
+    # the rows(m) are number of sequences made of stack of frames
+
+    seqs_reward = np.array([])
+    seqs_stack = np.array([])
+
+    for d in episodes_indices:
+        dir_id = int(dirs[d])
+        path = os.path.join(start_path, dirs[d])
+        files = os.listdir(path)
+        files_png = []
+        # only take .png files
+        for x in files:
+            if x.endswith(".png"):
+                files_png.append(x)
+
+        # n_files_contained = len(files_png)
+        files_png.sort()  # files_png might have files stored in a random order
+
+        frame_stack = np.array([])
+        for i in range(5): # assuming the test has one sequence in each episodes
+            # frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
+            # frame_id = int(frame_id[0])
+            # print(frame_stack.shape)
+            frame = cv2.imread(os.path.join(path, files_png[i]))
+            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = np.expand_dims(frame, axis=2)
+            if frame_stack.size == 0:
+                frame_stack = np.copy(frame)
+            else:
+                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+
+        frame_stack = np.expand_dims(frame_stack, axis=3)
+
+        if seqs_stack.size == 0:
+            seqs_stack = np.copy(frame_stack)
+            seqs_reward = np.concatenate((seqs_reward, rewards[dir_id]))
+        else:
+            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
+            seqs_reward = np.concatenate((seqs_reward, rewards[dir_id]))
+
+    seqs_stack_XY = (seqs_stack, seqs_reward)
+    file_name = "pickle_seq_stack_XY_test1_tuple"
+    pickle_store(seqs_stack_XY, start_path, file_name)
+    # return seqs_stack, seqs_reward
+
+def load_all_seqs_stack_XY_test1(root_path, top_n_episodes=2):
+    # # loading the csv for each episode and running the PCA
+    """
+    read the root directory and create
+    :param root_path:
+    :param top_n_episodes:
+    :return:
+    """
+    files = next(os.walk(root_path))[2]
+    files.sort()
+    files_seqs_stacks = []
+    pattern = re.compile("pickle_seq_stack_XY_test1_tuple")
     for x in files:
         if pattern.match(x):
             files_seqs_stacks.append(x)
