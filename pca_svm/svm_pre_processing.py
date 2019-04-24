@@ -59,7 +59,8 @@ if train_test == 1:
     test_X, test_Y = pickle_load(root_path=start_path, file_name="pickle_raw_test_XY_type1_tuple")
     test_X = test_X.values
     test_Y = test_Y.values
-
+	
+    print("out of raw frames goint to PCA-reduction")
 
 
     # transform this data using pca object used during training
