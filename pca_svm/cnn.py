@@ -41,7 +41,7 @@ if train_test == 0:
     #     print(seqs_stack_Y[i])
     # # print(count, '\n')
 
-    # splitting the data into train and validation test
+    # splitting the data for balancing
     m_samples = seqs_stack_X.shape[3]
     # print(seqs_stack_X.shape)
     m_train = int(m_samples*1)

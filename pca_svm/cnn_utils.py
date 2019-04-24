@@ -155,6 +155,42 @@ def load_all_seqs_stack_XY(root_path, top_n_episodes=2):
 
     return seqs_stack_X, seqs_stack_Y
 
+def load_all_seqs_stack_XY_balanced(root_path, top_n_episodes=2):
+    # # load balanced dataset
+    """
+    read the root directory and create
+    :param root_path:
+    :param top_n_episodes:
+    :return:
+    """
+    files = next(os.walk(root_path))[2]
+    files.sort()
+    files_seqs_stacks = []
+    pattern = re.compile("pickle_seq_stack_XY[\d]")
+    for x in files:
+        if pattern.match(x):
+            files_seqs_stacks.append(x)
+
+    episodes = files_seqs_stacks[:top_n_episodes]
+    # all_train_XY = pd.DataFrame()
+
+    # path = os.path.join(root_path, episodes[0])
+    seqs_stack_X = np.array([])
+    seqs_stack_Y = np.array([])
+    # seqs_stack_X, seqs_stack_Y = pickle_load(root_path, episodes[0])
+
+    for seqs_stack_XY in episodes:
+        if seqs_stack_X.size == 0:
+            seqs_stack_X, seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
+            balance_indices = seqs_stack_Y[seqs_stack_Y == 1]
+        else:
+
+            temp_seqs_stack_X, temp_seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
+            seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
+            seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
+
+    return seqs_stack_X, seqs_stack_Y
+
 
 def frame_reward_to_seqs_stack_XY_test1(start_path, sample_fraction=0.1):
     # # # can be called in paralle to get images and store as stack of sequences where each stack is stack of frames
