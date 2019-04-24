@@ -189,6 +189,7 @@ if train_test == 1:
                 test_X = test_XY.drop('Y', axis=1).to_numpy(copy=True)
                 test_Y = test_XY.loc[:, 'Y'].to_numpy(copy=True)
 
+                print("sequnces loaded goint to svm model for predict")
                 # test set prediction
                 # best_clf = svm_load_model('libsvm_lin.model')
 
@@ -211,6 +212,8 @@ if train_test == 1:
                                                   save_to_csv=True, root_path=start_path, file_name="seq_test_XY_type1")
                 # test_XY = seq_test_XY
                 test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY_type1"))
+
+                print("sequnces loaded goint to svm model for predict")
 
                 # test set prediction
                 best_clf = pickle_load(root_path=start_path, file_name="svm_best_clf")
