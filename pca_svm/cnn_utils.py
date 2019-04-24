@@ -182,10 +182,25 @@ def load_all_seqs_stack_XY_balanced(root_path, top_n_episodes=2):
     for seqs_stack_XY in episodes:
         if seqs_stack_X.size == 0:
             seqs_stack_X, seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
-            balance_indices = seqs_stack_Y[seqs_stack_Y == 1]
+            true_indices= (seqs_stack_Y == 1).reshape(-1)
+            temp_true_indices = np.copy(true_indices)
+            np.random.seed(0)
+            np.random.shuffle(temp_true_indices)
+            false_indices = temp_true_indices
+            balance_indices = true_indices+false_indices
+            seqs_stack_Y = seqs_stack_Y[balance_indices]
+            seqs_stack_X = seqs_stack_X[:, :, :, balance_indices]
         else:
 
             temp_seqs_stack_X, temp_seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
+            true_indices = (temp_seqs_stack_Y == 1).reshape(-1)
+            temp_true_indices = np.copy(true_indices)
+            np.random.seed(0)
+            np.random.shuffle(temp_true_indices)
+            false_indices = temp_true_indices
+            balance_indices = true_indices + false_indices
+            temp_seqs_stack_Y = temp_seqs_stack_Y[balance_indices]
+            temp_seqs_stack_X = temp_seqs_stack_X[:, :, :, balance_indices]
             seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
             seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
 
