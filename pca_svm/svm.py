@@ -180,14 +180,11 @@ if train_test == 1:
                 test_XY_reduced = pickle_load(root_path=start_path, file_name="pickle_test_XY_reduced_tuple")
 
                 # the sequence will be known by the first frame in the sequence
-                # # the train_XY_reduced stores all the episode, separated by -1 (y_at_start_of_episode) in 'Y' label.
+                # test_XY_reduced is a tuple of test_X_reduced and test_Y
                 test_XY_to_seq_XY_type1(test_XY_reduced,
-                                                 safe_to_csv=True, root_path=start_path, file_name="seq_test_XY")
+                                        save_to_csv=True, root_path=start_path, file_name="seq_test_XY_type1")
                 # test_XY = seq_test_XY
-                test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY"))
-
-                # test_XY = test_XY.sample(frac=0.2, replace=False, random_state=1, axis=0)
-                # print(test_XY.shape)
+                test_XY = pd.read_csv(os.path.join(start_path, "seq_test_XY_type1"))
 
                 test_X = test_XY.drop('Y', axis=1).to_numpy(copy=True)
                 test_Y = test_XY.loc[:, 'Y'].to_numpy(copy=True)
