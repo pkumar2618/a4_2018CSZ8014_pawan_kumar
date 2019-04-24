@@ -18,7 +18,7 @@ if train_test == 0:
     # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
     # start_path = '/Users/pawan/Documents/ml_assg/assig4/train_dataset/'
     # start_path = '/home/pawan/train_dataset/'
-
+    n_episodes = int(n_episodes)
     results = []  # used to store the result of async processes
     # # running parallel processes to get images stored as matrix of grayscale pixel.
     dirs = next(os.walk(start_path))[1]
@@ -35,13 +35,13 @@ if train_test == 0:
     # loading the csv for each episode and running the incremental PCA after
     # all the data is loaded, the function returns reduced data_set
 
-    train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path=start_path,
-                                                 top_n_episodes=2, n_components=50, batch_size=None)
+    # train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path=start_path,
+    #                                            top_n_episodes=n_episodes, n_components=50, batch_size=None)
 
     # pickling the reduced dataset
-    pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
-    pickle_store(ipca, root_path=start_path, file_name="pickle_ipca")
-    pickle_store(data_scaler, root_path=start_path, file_name="pickle_data_scaler")
+    # pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
+    # pickle_store(ipca, root_path=start_path, file_name="pickle_ipca")
+    # pickle_store(data_scaler, root_path=start_path, file_name="pickle_data_scaler")
 
 if train_test == 1:
     """

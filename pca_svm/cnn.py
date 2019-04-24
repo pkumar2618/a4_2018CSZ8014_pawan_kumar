@@ -80,9 +80,9 @@ if train_test == 0:
     training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
     # # saving the model
-    model.save_weights('cnn_32_64_2k_binary_e20_b100.h5')
-    model.save('cnn_32_64_2k_binary_e20_b100.h5')
-    model.save('cnn_32_64_2k_binary_e_20_b100.model')
+    model.save_weights('weights_cnn_32_64_2k_binary_e20_b100_size%d'%m_samples+'.h5')
+    model.save('cnn_32_64_2k_binary_e20_b100_size%d'%m_samples+'.h5')
+    model.save('cnn_32_64_2k_binary_e20_b100_size%d'%m_samples+'.model')
 
     # # plotting accuracy
     train_acc = training_history.history['acc']
@@ -107,7 +107,7 @@ if train_test == 0:
     ax2.set_title("train and validation loss")
 
     plt.tight_layout()
-    fig_name = os.path.join(start_path, "cnn_loss_curve.png")
+    fig_name = os.path.join(start_path, "cnn_loss_curve_size%d" %m_samples+".png")
     plt.savefig(fig_name, format='png')
 #    plt.show()
 
