@@ -2,6 +2,7 @@ import os
 import sys
 import gc
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
 from sklearn.metrics import mean_squared_error, f1_score
@@ -185,4 +186,63 @@ if train_test == 1:
     test_Y_pred = (test_Y_pred >= 0.5).astype(int)
     test_f1_score = f1_score(test_Y, test_Y_pred, average='binary')
     print('test f1-score accuracy', test_f1_score)
+    # # model evalution on test data
+
+if train_test == 7:
+    # predicting test data for competion
+    # load all the seq stack obtained from frame and club them into one seq stack
+    # n_episodes = int(sys.argv[3])
+    # load all the grayscale images stacke in 5 alog RGB channel, channel second last to last,
+    seqs_stack_X, episode_ID = pickle_load(root_path=start_path, file_name="pickle_seq_stack_XID_compete_tuple")
+
+    # changing the channel for sequences
+    m_samples = seqs_stack_X.shape[3]
+    # print(seqs_stack_X.shape)
+    m_test = int(m_samples * 1)
+    test_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_test)])
+    test_Y = episode_ID[:m_test]
+    print(test_X.shape)
+
+    # # see the images first few
+    # for i in range(1, 10):
+    #     for j in range(0, 5):
+    #         cv2.imshow('grayed image', test_X[i,:,:,j])
+    #         cv2.waitKey(0)
+    #     print(test_Y[i])
+
+    input_shape = test_X[0, :, :, :].shape
+    print(input_shape)
+
+    # load a saved model
+    # load json and create model
+    file_json = os.path.join(start_path, 'cnn_model.json')
+    json_file = open(file_json, 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
+        # model = load_model('my_model.h5')
+        loaded_model = model_from_json(loaded_model_json)
+
+    # load weights into new model
+    file_weight = os.path.join(start_path, 'cnn_weight.h5')
+    loaded_model.load_weights(file_weight)
+    print("model has been loaded know compiling it")
+
+    # compile the loaded model
+    loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    # predict accuracy
+    test_Y_pred = loaded_model.predict(test_X)
+    test_Y_pred = (test_Y_pred >= 0.5).astype(int)
+    test_Y_pred = test_Y_pred.reshape(-1)
+    test_Y = test_Y.reshape(-1)
+
+    predicted_Y = pd.Series(test_Y_pred, name="model_prediction")
+    IDs = pd.Series(test_Y, name="ID")
+    ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
+    file_name = os.path.join(start_path, "result_ID_Y")
+    ID_pred_Y.to_csv(file_name, index=False)
+
+    # test_f1_score = f1_score(test_Y, test_Y_pred, average='binary')
+    # print('test f1-score accuracy', test_f1_score)
     # # model evalution on test data
