@@ -218,7 +218,8 @@ if train_test == 7:
         try:
             dir_batch = dirs[0:500]
         except IndexError:
-            dir_batch = dirs[i*500: len(dirs)]
+            dir_batch = dirs[i: len(dirs)]
+        print("now taking batch: %d" %i)
         seqs_stack_X, episode_ID = dirID_to_seqs_stack_X_ID(start_path, dir_batch)
 
         # changing the channel for sequences
@@ -236,7 +237,7 @@ if train_test == 7:
         test_Y_pred = (test_Y_pred >= 0.5).astype(int)
         test_Y_pred = test_Y_pred.reshape(-1)
         episode_ID = episode_ID.reshape(-1)
-
+        print("prediction complete for batch: %d" %i)
         all_ids = np.append(all_ids, episode_ID)
         all_prediction = np.append(all_prediction, test_Y_pred)
 
