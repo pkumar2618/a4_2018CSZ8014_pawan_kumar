@@ -1,6 +1,6 @@
 import os
 import sys
-import gc
+import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +12,7 @@ from keras.initializers import glorot_uniform
 
 # from keras.models import load_model
 
-from cnn_utils import load_all_seqs_stack_XY, load_all_seqs_stack_XY_balanced,\
+from cnn_utils import load_all_seqs_stack_XY, load_all_seqs_stack_XY_balanced, load_seqs_stack_XY_balanced, \
     frame_reward_to_seqs_stack_XY, pickle_load, pickle_store,  dirID_to_seqs_stack_X_ID
 from cnn_utils import model_architecture
 
@@ -25,50 +25,68 @@ if train_test == 0:
 
     n_episodes = int(sys.argv[3])
     # load all the grayscale images stacke in 5 alog RGB channel, channel second last last,
-    seqs_stack_X, seqs_stack_Y = load_all_seqs_stack_XY_balanced(start_path, n_episodes)
 
-    # # see the images first few
-    # for i in range(100, 110):
-    #     for j in range(0, 5):
-    #     # for frame in seqs_stack_X[:, :, :, i]:
-    #         # for frame in seq_stack:
-    #         cv2.imshow('grayed image', seqs_stack_X[:,:,j,i])
-    #         cv2.waitKey(0)
-    #     print(seqs_stack_Y[i])
-    # # print(count, '\n')
+    ###
+    files = next(os.walk(start_path))[2]
+    files.sort()
+    files_seqs_stacks = []
+    pattern = re.compile("pickle_seq_stack_XY[\d]")
+    for x in files:
+        if pattern.match(x):
+            files_seqs_stacks.append(x)
 
-    # splitting the data for balancing
-    # print(seqs_stack_X.shape)
-    # reversing the order of the sequence channel
-    m_samples = seqs_stack_X.shape[3]
-    m_train = int(m_samples*1)
-    train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
-    train_Y = seqs_stack_Y[:m_train]
-    # print(train_X.shape)
+    if len(files_seqs_stacks) <= n_episodes:
+        episodes = files_seqs_stacks
+    else:
+        episodes = files_seqs_stacks[:n_episodes]
 
-    # val_X =np.array([seqs_stack_X[:, :, :, i] for i in range(m_train, m_samples)])
-    # val_Y = seqs_stack_Y[m_train:]
-    # print(val_X.shape)
+    # path = os.path.join(root_path, episodes[0])
+    all_seqs_stack_X = np.array([])
+    all_seqs_stack_Y = np.array([])
+    train_X = np.array([])
+    train_Y = np.array([])
 
-    # # # see the images first few
-    # for i in range(1, 10):
-    #     for j in range(0, 5):
-    #         cv2.imshow('grayed image', train_X[i,:,:,j])
-    #         cv2.waitKey(0)
-    #     print(train_Y[i])
+    for eps in episodes:
+        seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
+        m_samples = seqs_stack_X.shape[3]
+
+        m_train = int(m_samples*0.1)
+        if m_train == 0:
+            m_train = 1
+
+        train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
+        train_Y = seqs_stack_Y[:m_train]
+        # print(train_X.shape)
+        # # # see the images first few
+        # for i in range(1, 10):
+        #     for j in range(0, 5):
+        #         cv2.imshow('grayed image', train_X[i,:,:,j])
+        #         cv2.waitKey(0)
+        #     print(train_Y[i])
+
+        if all_seqs_stack_X.size == 0:
+            all_seqs_stack_X = train_X
+            all_seqs_stack_Y = train_Y
+        else:
+            all_seqs_stack_X = np.concatenate((all_seqs_stack_X, train_X), axis=0)
+            all_seqs_stack_Y = np.concatenate((all_seqs_stack_Y,train_Y))
 
     input_shape = train_X[0, :, :, :].shape
     # print(input_shape)
+    epochs = 25
+    batch_size = 50
+    train_X = all_seqs_stack_X
+    train_Y = all_seqs_stack_Y
+    m_samples = train_X.shape[0]
 
     ## creating Model Architecture
     model = model_architecture(input_shape)
     # model.summary()
 
-    epochs = 25
-    batch_size = 50
-
     # # model configuration
-    model.compile(loss ='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+
 
     # # model fitting
     training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)

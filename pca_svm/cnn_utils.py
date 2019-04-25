@@ -155,6 +155,23 @@ def load_all_seqs_stack_XY(root_path, top_n_episodes=2):
 
     return seqs_stack_X, seqs_stack_Y
 
+def load_seqs_stack_XY_balanced(root_path, file_name):
+    # # load balanced dataset
+    """
+    read the root directory and create
+    :param root_path:
+    """
+    seqs_stack_X, seqs_stack_Y = pickle_load(root_path, file_name)
+    true_indices = (seqs_stack_Y == 1).reshape(-1)
+    temp_true_indices = np.copy(true_indices)
+    np.random.seed(0)
+    np.random.shuffle(temp_true_indices)
+    false_indices = temp_true_indices
+    balance_indices = true_indices + false_indices
+    seqs_stack_Y = seqs_stack_Y[balance_indices]
+    seqs_stack_X = seqs_stack_X[:, :, :, balance_indices]
+    return seqs_stack_X, seqs_stack_Y
+
 def load_all_seqs_stack_XY_balanced(root_path, top_n_episodes=2):
     # # load balanced dataset
     """
