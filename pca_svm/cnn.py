@@ -4,6 +4,7 @@ import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import cv2
 from sklearn.metrics import mean_squared_error, f1_score
 from keras.models import model_from_json
@@ -86,8 +87,6 @@ if train_test == 0:
     # # model configuration
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-
-
     # # model fitting
     training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
@@ -107,20 +106,20 @@ if train_test == 0:
     print("Saved model to disk")
 
     # # load json and create model
-    json_file = open(file_json, 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
-        loaded_model = model_from_json(loaded_model_json)
+    # json_file = open(file_json, 'r')
+    # loaded_model_json = json_file.read()
+    # json_file.close()
+    # with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
+    #     loaded_model = model_from_json(loaded_model_json)
 
     # load weights into new model
-    loaded_model.load_weights(file_weight)
-    print("model has been loaded know compiling it")
+    # loaded_model.load_weights(file_weight)
+    # print("model has been loaded know compiling it")
 
     # evaluate loaded model on test data
-    loaded_model.compile(loss ='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-    score = loaded_model.evaluate(train_X, train_Y, verbose=0)
-    print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
+    # loaded_model.compile(loss ='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    # score = loaded_model.evaluate(train_X, train_Y, verbose=0)
+    # print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
 
 
     # # plotting accuracy
