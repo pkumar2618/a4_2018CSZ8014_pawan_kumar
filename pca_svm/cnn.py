@@ -69,7 +69,7 @@ if train_test == 0:
     # model.summary()
 
     epochs = 25
-    batch_size = 2
+    batch_size = 50
 
     # # model configuration
     model.compile(loss ='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -82,13 +82,13 @@ if train_test == 0:
     print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
     # serialize model to JSON
-    file_json = os.path.join(start_path, 'cnn_32_64_2k_binary_e20_b100_size_%d' % m_samples+'.json')
+    file_json = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'.json')
     model_json = model.to_json()
     with open(file_json, "w") as json_file:
         json_file.write(model_json)
 
     # serialize weights to HDF5
-    file_weight = os.path.join(start_path, 'cnn_32_64_2k_binary_e20_b100_size_%d' % m_samples+'weights.h5')
+    file_weight = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'weights.h5')
     model.save_weights(file_weight)
     print("Saved model to disk")
 
@@ -132,7 +132,7 @@ if train_test == 0:
     ax2.set_title("train and validation loss")
 
     plt.tight_layout()
-    fig_name = os.path.join(start_path, "cnn_loss_curve_size_%d" %m_samples+".png")
+    fig_name = os.path.join(start_path, "cnn_loss_curve_size_e%d_b%d_size_%d"%(epochs, batch_size, m_samples)+".png")
     plt.savefig(fig_name, format='png')
 #    plt.show()
 

@@ -23,7 +23,7 @@ if train_test == 0:
     dirs = next(os.walk(start_path))[1]
     dirs.sort()
     n_episodes = int(n_episodes)
-    episodes = dirs[:n_episodes]
+    episodes = dirs[n_episodes:]
     pool = mp.Pool(mp.cpu_count())
     result_objects = [pool.apply_async(frame_reward_to_seqs_stack_XY,
                                        args=(start_path, episode_dir, 1)) for episode_dir in episodes]
