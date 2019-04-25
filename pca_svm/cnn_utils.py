@@ -290,6 +290,64 @@ def frame_reward_to_seqs_stack_XY_test1(start_path, sample_fraction=0.1):
     pickle_store(seqs_stack_XY, start_path, file_name)
     # return seqs_stack, seqs_reward
 
+def dirID_to_seqs_stack_X_ID(start_path, dirs_batch):
+    # # # can be called in paralle to get images and store as stack of sequences where each stack is stack of frames
+    # as matrix of grayscale pixel.
+    # create the stack of sequence, the grayscale frames are stacked in RGB channel, channel first
+    # type1 has only 5 frames in an episodes, and sequence is identified by episodes name
+    """
+    :param start_path:
+    :param episode_dir:
+
+    """
+    # the sequence will be identified by the dir id,
+    # here we will only stack of frames and their rewards using pandas Dataframe, with
+    # reading all the images in bunch of 5 and stakcing them up in RGB channel
+    # the rows(m) are number of sequences made of stack of frames
+
+    seqs_id = np.array([])
+    seqs_stack = np.array([])
+    for i in range(len(dirs_batch)):
+        dir_id = int(dirs_batch[i])
+        path = os.path.join(start_path, dirs_batch[i])
+        files = os.listdir(path)
+        files_png = []
+        # only take .png files
+        for x in files:
+            if x.endswith(".png"):
+                files_png.append(x)
+
+        # n_files_contained = len(files_png)
+        files_png.sort()  # files_png might have files stored in a random order
+
+        frame_stack = np.array([])
+        for i in range(5):  # assuming the test has one sequence in each episodes
+            # frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
+            # frame_id = int(frame_id[0])
+            # print(frame_stack.shape)
+            frame = cv2.imread(os.path.join(path, files_png[i]))
+            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) / 255)
+            frame = np.expand_dims(frame, axis=2)
+            if frame_stack.size == 0:
+                frame_stack = np.copy(frame)
+            else:
+                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+
+        frame_stack = np.expand_dims(frame_stack, axis=3)
+
+        if seqs_stack.size == 0:
+            seqs_stack = np.copy(frame_stack)
+            seqs_id = np.append(seqs_id, dir_id)
+        else:
+            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
+            seqs_id = np.append(seqs_id, dir_id)
+
+    # seqs_stack_XY = (seqs_stack, seqs_id)
+    # file_name = "pickle_seq_stack_XID_compete_tuple"
+    # pickle_store(seqs_stack_XY, start_path, file_name)
+    return seqs_stack, seqs_id
+
+
 def frame_dirID_to_seqs_stack_XID_compete(start_path, sample_fraction=0.1):
     # # # can be called in paralle to get images and store as stack of sequences where each stack is stack of frames
     # as matrix of grayscale pixel.
