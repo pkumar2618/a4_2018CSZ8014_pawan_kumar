@@ -231,7 +231,7 @@ if train_test == 7:
     all_ids = np.array([])
     all_prediction = np.array([])
     dir_batch = np.array([])
-    for i in range(0, len(dirs), 500):
+    for i in range(0, 1200, 500):
         try:
             dir_batch = dirs[0:500]
         except IndexError:
@@ -245,14 +245,8 @@ if train_test == 7:
         m_test = int(m_samples * 1)
         test_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_test)])
         episode_ID = episode_ID[:m_test]
-
         # print(test_X.shape)
-        # # see the images first few
-        # for i in range(1, 10):
-        #     for j in range(0, 5):
-        #         cv2.imshow('grayed image', test_X[i,:,:,j])
-        #         cv2.waitKey(0)
-        #     print(test_Y[i])
+
         # input_shape = test_X[0, :, :, :].shape
         # print(input_shape)
         # predict accuracy
@@ -264,8 +258,8 @@ if train_test == 7:
         all_ids = np.append(all_ids, episode_ID)
         all_prediction = np.append(all_prediction, test_Y_pred)
 
-    predicted_Y = pd.Series(test_Y_pred, name="model_prediction")
-    IDs = pd.Series(all_ids, name="ID")
+    predicted_Y = pd.Series(test_Y_pred, name="Prediction")
+    IDs = pd.Series(all_ids, name="id")
     ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
     file_name = os.path.join(start_path, "result_ID_Y")
     ID_pred_Y.to_csv(file_name, index=False)

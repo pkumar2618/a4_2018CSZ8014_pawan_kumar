@@ -155,6 +155,7 @@ if train_test == 0:
                 # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
                 # dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
+                # best_clf = svm.SVC(C=0.0001, kernel='linear', class_weight='balanced', random_state=0)
                 best_clf = svm.SVC(C=0.01, gamma = 1e-15, kernel='rbf', class_weight='balanced', random_state=0)
                 best_clf.fit(train_X, train_Y)
 
