@@ -4,7 +4,7 @@ import multiprocessing as mp
 import pandas as pd
 from utils import frame_reward_to_matrix_XY, frame_reward_to_matrix_XY_test_type1, pickle_load, pickle_store
 from sklearn.preprocessing import StandardScaler
-
+from utils import transforming_with_pca, train_XY_to_seq_XY, test_XY_to_seq_XY_type1
 
 train_test = int(sys.argv[1])
 start_path = sys.argv[2]
@@ -35,13 +35,13 @@ if train_test == 0:
     # loading the csv for each episode and running the incremental PCA after
     # all the data is loaded, the function returns reduced data_set
 
-    # train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path=start_path,
-    #                                            top_n_episodes=n_episodes, n_components=50, batch_size=None)
+    train_XY_reduced, ipca, data_scaler = transforming_with_pca(root_path=start_path,
+                                              top_n_episodes=n_episodes, n_components=50, batch_size=None)
 
     # pickling the reduced dataset
-    # pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
-    # pickle_store(ipca, root_path=start_path, file_name="pickle_ipca")
-    # pickle_store(data_scaler, root_path=start_path, file_name="pickle_data_scaler")
+    pickle_store(train_XY_reduced, root_path=start_path, file_name="pickle_train_XY_reduced")
+    pickle_store(ipca, root_path=start_path, file_name="pickle_ipca")
+    pickle_store(data_scaler, root_path=start_path, file_name="pickle_data_scaler")
 
 if train_test == 1:
     """

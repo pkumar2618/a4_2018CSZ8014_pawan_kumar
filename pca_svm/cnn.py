@@ -51,7 +51,7 @@ if train_test == 0:
         seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
         m_samples = seqs_stack_X.shape[3]
 
-        m_train = int(m_samples*0.1)
+        m_train = int(m_samples*0.5)
         if m_train == 0:
             m_train = 1
 

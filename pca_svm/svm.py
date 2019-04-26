@@ -20,8 +20,7 @@ train_test = int(sys.argv[1])
 # 9: is tune
 # 0: train
 # 1: is predict
-train_test_lib = sys.argv[2]
-start_path = sys.argv[3]
+start_path = sys.argv[2]
 
 
 # path ='/Users/pawan/Documents/ml_assg/assig4/train_dataset/00000001/'
@@ -66,8 +65,7 @@ if train_test == 9:
         #                        {'C': [1e-7, 1e-5, 1e-2, 1, 5, 10], 'gamma': [1e-5, 1e-3, 1e-2, 1e-1, 1], 'kernel': ['rbf']},
         #                        ]
 
-        parameter_candidates = [{'C': [1e-2, 1, 1.5], 'kernel': ['linear']},
-                                {'C': [1e-2, 1, 1.5], 'gamma': [1e-15, 1e-10, 10, 1000], 'kernel': ['rbf']},
+        parameter_candidates = [{'C': [1e-2, 1, 1.5], 'gamma': [1e-15, 1e-10, 10, 1000], 'kernel': ['rbf']},
                                 ]
         clf = GridSearchCV(estimator=svm.SVC(), param_grid=parameter_candidates, n_jobs=-1)
         clf.fit(train_X, train_Y)
@@ -81,6 +79,7 @@ if train_test == 9:
 
 
 if train_test == 0:
+        train_test_lib = sys.argv[3]
         # training the svm classifier
         if train_test_lib == "libsvm":
                 # train the model with new set
@@ -156,7 +155,7 @@ if train_test == 0:
                 # dev_X = dev_set.drop('Y', axis=1).to_numpy(copy=True)
                 # dev_Y = dev_set.loc[:, 'Y'].to_numpy(copy=True)
 
-                best_clf = svm.SVC(C=0.01, kernel='linear', class_weight='balanced', random_state=0)
+                best_clf = svm.SVC(C=0.01, gamma = 1e-15, kernel='rbf', class_weight='balanced', random_state=0)
                 best_clf.fit(train_X, train_Y)
 
                 train_mean_score = best_clf.score(train_X, train_Y)
@@ -174,6 +173,7 @@ if train_test == 0:
                 # print('dev f1-score accuracy', dev_f1_score)
 
 if train_test == 1:
+        train_test_lib = sys.argv[3]
         " predict test accuracy"
         if train_test_lib == 'libsvm':
                 # load the test_XY_reduced to be made into sequence

@@ -342,8 +342,8 @@ def dirID_to_seqs_stack_X_ID(start_path, dirs_batch):
             # frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
             # frame_id = int(frame_id[0])
             # print(frame_stack.shape)
-            frame = cv2.imread(os.path.join(path, files_png[i]))
-            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) / 255)
+            frame = cv2.imread(os.path.join(path, files_png[i]),0)
+            frame = np.array(frame) / 255
             frame = np.expand_dims(frame, axis=2)
             if frame_stack.size == 0:
                 frame_stack = np.copy(frame)
