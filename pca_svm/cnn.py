@@ -51,7 +51,7 @@ if train_test == 0:
         seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
         m_samples = seqs_stack_X.shape[3]
 
-        m_train = int(m_samples*0.5)
+        m_train = int(m_samples*1)
         if m_train == 0:
             m_train = 1
 
@@ -263,5 +263,5 @@ if train_test == 7:
     predicted_Y = pd.Series(all_prediction, name="Prediction")
     IDs = pd.Series(all_ids, name="id")
     ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
-    file_name = os.path.join(start_path, "result_ID_Y")
+    file_name = os.path.join(start_path, "result_ID_Y_run2")
     ID_pred_Y.to_csv(file_name, index=False)
