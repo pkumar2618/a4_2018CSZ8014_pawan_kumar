@@ -47,38 +47,15 @@ if train_test == 0:
     train_X = np.array([])
     train_Y = np.array([])
 
-    for eps in episodes:
-        seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
-        m_samples = seqs_stack_X.shape[3]
-
-        m_train = int(m_samples*1)
-        if m_train == 0:
-            m_train = 1
-
-        train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
-        train_Y = seqs_stack_Y[:m_train]
-        # print(train_X.shape)
-        # # # see the images first few
-        # for i in range(1, 10):
-        #     for j in range(0, 5):
-        #         cv2.imshow('grayed image', train_X[i,:,:,j])
-        #         cv2.waitKey(0)
-        #     print(train_Y[i])
-
-        if all_seqs_stack_X.size == 0:
-            all_seqs_stack_X = train_X
-            all_seqs_stack_Y = train_Y
-        else:
-            all_seqs_stack_X = np.append(all_seqs_stack_X, train_X, axis=0)
-            all_seqs_stack_Y = np.append(all_seqs_stack_Y, train_Y)
-
-    input_shape = train_X[0, :, :, :].shape
-    # print(input_shape)
-    epochs = 25
+    epochs = 20
     batch_size = 50
     train_X = all_seqs_stack_X
     train_Y = all_seqs_stack_Y
-    m_samples = train_X.shape[0]
+
+    seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, episodes[0])
+    m_samples = seqs_stack_X.shape[3]
+    train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_samples)])
+    input_shape = train_X[0, :, :, :].shape
 
     ## creating Model Architecture
     model = model_architecture(input_shape)
@@ -87,12 +64,33 @@ if train_test == 0:
     # # model configuration
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    # # model fitting
-    training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)
+    ###
+    for epoch in range(20):
+        for eps in episodes:
+            seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
+            m_samples = seqs_stack_X.shape[3]
+
+            m_train = int(m_samples * 1)
+            if m_train == 0:
+                m_train = 1
+
+            train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
+            train_Y = seqs_stack_Y[:m_train]
+
+            # # model fitting
+            model.fit(train_X, train_Y, batch_size=batch_size, epochs=epoch + 1,
+                                         initial_epoch=epoch, shuffle=True)
+
+            # if all_seqs_stack_X.size == 0:
+            #     all_seqs_stack_X = train_X
+            #     all_seqs_stack_Y = train_Y
+            # else:
+            #     all_seqs_stack_X = np.append(all_seqs_stack_X, train_X, axis=0)
+            #     all_seqs_stack_Y = np.append(all_seqs_stack_Y, train_Y)
 
     # # evaluate model
-    scores = model.evaluate(train_X, train_Y, verbose=0)
-    print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
+    # scores = model.evaluate(train_X, train_Y, verbose=0)
+    # print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
     # serialize model to JSON
     file_json = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'.json')
@@ -123,30 +121,30 @@ if train_test == 0:
 
 
     # # plotting accuracy
-    train_acc = training_history.history['acc']
-    val_acc = training_history.history['val_acc']
-    train_loss = training_history.history['loss']
-    val_loss = training_history.history['val_acc']
-    epoch_list = range(1, len(train_acc) + 1)
+    # train_acc = training_history.history['acc']
+    # val_acc = training_history.history['val_acc']
+    # train_loss = training_history.history['loss']
+    # val_loss = training_history.history['val_acc']
+    # epoch_list = range(1, len(train_acc) + 1)
 
-    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
-    line1 = ax1.plot(epoch_list, train_acc, label='train accuracy')
-    line2 = ax1.plot(epoch_list, val_acc, label='validation accuracy')
-    ax1.legend()
-    ax1.set_xlabel("epach")
-    ax1.set_ylabel("accuracy")
-    ax1.set_title("train and validation accuracy")
+    # fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+    # line1 = ax1.plot(epoch_list, train_acc, label='train accuracy')
+    # line2 = ax1.plot(epoch_list, val_acc, label='validation accuracy')
+    # ax1.legend()
+    # ax1.set_xlabel("epach")
+    # ax1.set_ylabel("accuracy")
+    # ax1.set_title("train and validation accuracy")
 
-    line3 = ax2.plot(epoch_list, train_loss, label='train loss')
-    line4 = ax2.plot(epoch_list, val_loss, label='validation loss')
-    ax2.legend()
-    ax2.set_xlabel("epoch")
-    ax2.set_ylabel("loss")
-    ax2.set_title("train and validation loss")
-
-    plt.tight_layout()
-    fig_name = os.path.join(start_path, "cnn_loss_curve_size_e%d_b%d_size_%d"%(epochs, batch_size, m_samples)+".png")
-    plt.savefig(fig_name, format='png')
+    # line3 = ax2.plot(epoch_list, train_loss, label='train loss')
+    # line4 = ax2.plot(epoch_list, val_loss, label='validation loss')
+    # ax2.legend()
+    # ax2.set_xlabel("epoch")
+    # ax2.set_ylabel("loss")
+    # ax2.set_title("train and validation loss")
+    #
+    # plt.tight_layout()
+    # fig_name = os.path.join(start_path, "cnn_loss_curve_size_e%d_b%d_size_%d"%(epochs, batch_size, m_samples)+".png")
+    # plt.savefig(fig_name, format='png')
 #    plt.show()
 
 
