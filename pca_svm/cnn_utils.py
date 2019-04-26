@@ -330,25 +330,25 @@ def dirID_to_seqs_stack_X_ID(start_path, dirs_batch):
         files = os.listdir(path)
         files_png = []
         # only take .png files
-        for x in files:
-            if x.endswith(".png"):
-                files_png.append(x)
+        # for x in files:
+        #     if x.endswith(".png"):
+        #         files_png.append(x)
 
         # n_files_contained = len(files_png)
-        files_png.sort()  # files_png might have files stored in a random order
-
+        # files_png.sort()  # files_png might have files stored in a random order
+        files.sort()
         frame_stack = np.array([])
         for i in range(5):  # assuming the test has one sequence in each episodes
             # frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
             # frame_id = int(frame_id[0])
             # print(frame_stack.shape)
-            frame = cv2.imread(os.path.join(path, files_png[i]),0)
+            frame = cv2.imread(os.path.join(path, files[i]), 0)
             frame = np.array(frame) / 255
             frame = np.expand_dims(frame, axis=2)
             if frame_stack.size == 0:
                 frame_stack = np.copy(frame)
             else:
-                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+                frame_stack = np.append(frame_stack, frame, axis=2)
 
         frame_stack = np.expand_dims(frame_stack, axis=3)
 
@@ -356,7 +356,7 @@ def dirID_to_seqs_stack_X_ID(start_path, dirs_batch):
             seqs_stack = np.copy(frame_stack)
             seqs_id = np.append(seqs_id, dir_id)
         else:
-            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
+            seqs_stack = np.append(seqs_stack, frame_stack, axis=3)
             seqs_id = np.append(seqs_id, dir_id)
 
     # seqs_stack_XY = (seqs_stack, seqs_id)

@@ -245,8 +245,14 @@ if train_test == 7:
         m_test = int(m_samples * 1)
         test_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_test)])
         episode_ID = episode_ID[:m_test]
-        # print(test_X.shape)
 
+        # print(test_X.shape)
+        # # see the images first few
+        # for i in range(1, 10):
+        #     for j in range(0, 5):
+        #         cv2.imshow('grayed image', test_X[i,:,:,j])
+        #         cv2.waitKey(0)
+        #     print(test_Y[i])
         # input_shape = test_X[0, :, :, :].shape
         # print(input_shape)
         # predict accuracy
