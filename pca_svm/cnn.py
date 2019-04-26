@@ -231,11 +231,13 @@ if train_test == 7:
     all_ids = np.array([])
     all_prediction = np.array([])
     dir_batch = np.array([])
-    for i in range(0, 1200, 500):
-        try:
-            dir_batch = dirs[0:500]
-        except IndexError:
-            dir_batch = dirs[i: len(dirs)]
+    step_size = 50
+    for i in range(0, 120, step_size):
+        if i + step_size <= 120:
+            dir_batch = dirs[i:(i+step_size)]
+        else:
+            dir_batch = dirs[i: 120]
+
         print("now taking batch: %d" %i)
         seqs_stack_X, episode_ID = dirID_to_seqs_stack_X_ID(start_path, dir_batch)
 
@@ -258,7 +260,7 @@ if train_test == 7:
         all_ids = np.append(all_ids, episode_ID)
         all_prediction = np.append(all_prediction, test_Y_pred)
 
-    predicted_Y = pd.Series(test_Y_pred, name="Prediction")
+    predicted_Y = pd.Series(all_prediction, name="Prediction")
     IDs = pd.Series(all_ids, name="id")
     ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
     file_name = os.path.join(start_path, "result_ID_Y")
