@@ -231,12 +231,12 @@ if train_test == 7:
     all_ids = np.array([])
     all_prediction = np.array([])
     dir_batch = np.array([])
-    step_size = 50
-    for i in range(0, 120, step_size):
-        if i + step_size <= 120:
+    step_size = 500
+    for i in range(0, len(dirs), step_size):
+        if i + step_size <= len(dirs):
             dir_batch = dirs[i:(i+step_size)]
         else:
-            dir_batch = dirs[i: 120]
+            dir_batch = dirs[i: len(dirs)]
 
         print("now taking batch: %d" %i)
         seqs_stack_X, episode_ID = dirID_to_seqs_stack_X_ID(start_path, dir_batch)
