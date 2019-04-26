@@ -84,9 +84,6 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
         frame_id = int(frame_id[0])
         # frame_stack = []
         frame_stack = np.array([])
-        # frame = cv2.imread(os.path.join(path, files_png[frame_id + 6]))
-        # frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) / 255)
-        # frame_stack = np.expand_dims(frame, axis=2)
 
         indices_after_missed_two = random.sample([x for x in range(6)], 4)  # the 7ths frame always stays
         indices_after_missed_two.sort()
@@ -94,13 +91,14 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
 
         for j in indices_after_missed_two:
             # print(frame_stack.shape)
-            frame = cv2.imread(os.path.join(path, files_png[frame_id+j]))
-            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = cv2.imread(os.path.join(path, files_png[frame_id+j]), 0)
+            # frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = np.array(frame) / 255
             frame = np.expand_dims(frame, axis=2)
             if frame_stack.size == 0:
                 frame_stack = np.copy(frame)
             else:
-                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+                frame_stack = np.append(frame_stack, frame, axis=2)
 
             # cv2.imshow('grayed image', frame)
             # cv2.waitKey(0)
@@ -112,10 +110,10 @@ def frame_reward_to_seqs_stack_XY(start_path, episode_dir, sample_fraction=0.1):
 
         if seqs_stack.size == 0:
             seqs_stack = np.copy(frame_stack)
-            seqs_reward = np.concatenate((seqs_reward, rewards[frame_id + j]))
+            seqs_reward = np.append(seqs_reward, rewards[frame_id + j])
         else:
-            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
-            seqs_reward = np.concatenate((seqs_reward, rewards[frame_id + j]))
+            seqs_stack = np.append(seqs_stack, frame_stack, axis=3)
+            seqs_reward = np.append(seqs_reward, rewards[frame_id + j])
 
     seqs_stack_XY = (seqs_stack, seqs_reward)
     file_name = "pickle_seq_stack_XY"+episode_dir
@@ -150,8 +148,8 @@ def load_all_seqs_stack_XY(root_path, top_n_episodes=2):
 
     for seqs_stack_XY in episodes[1:]:
         temp_seqs_stack_X, temp_seqs_stack_Y = pickle_load(root_path, seqs_stack_XY)
-        seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
-        seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
+        seqs_stack_X = np.append(seqs_stack_X, temp_seqs_stack_X, axis=3)
+        seqs_stack_Y = np.append(seqs_stack_Y, temp_seqs_stack_Y)
 
     return seqs_stack_X, seqs_stack_Y
 
@@ -218,8 +216,8 @@ def load_all_seqs_stack_XY_balanced(root_path, top_n_episodes=2):
             balance_indices = true_indices + false_indices
             temp_seqs_stack_Y = temp_seqs_stack_Y[balance_indices]
             temp_seqs_stack_X = temp_seqs_stack_X[:, :, :, balance_indices]
-            seqs_stack_X = np.concatenate((seqs_stack_X, temp_seqs_stack_X), axis=3)
-            seqs_stack_Y = np.concatenate((seqs_stack_Y, temp_seqs_stack_Y))
+            seqs_stack_X = np.append((seqs_stack_X, temp_seqs_stack_X), axis=3)
+            seqs_stack_Y = np.append((seqs_stack_Y, temp_seqs_stack_Y))
 
     return seqs_stack_X, seqs_stack_Y
 
@@ -285,22 +283,23 @@ def frame_reward_to_seqs_stack_XY_test1(start_path, sample_fraction=0.1):
             # frame_id = re.split("[.]", files_png[i])  # files_png might have files stored in a random order
             # frame_id = int(frame_id[0])
             # print(frame_stack.shape)
-            frame = cv2.imread(os.path.join(path, files_png[i]))
-            frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = cv2.imread(os.path.join(path, files_png[i]), 0)
+            # frame = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)/255)
+            frame = np.array(frame) / 255
             frame = np.expand_dims(frame, axis=2)
             if frame_stack.size == 0:
                 frame_stack = np.copy(frame)
             else:
-                frame_stack = np.concatenate((frame_stack, frame), axis=2)
+                frame_stack = np.append(frame_stack, frame, axis=2)
 
         frame_stack = np.expand_dims(frame_stack, axis=3)
 
         if seqs_stack.size == 0:
             seqs_stack = np.copy(frame_stack)
-            seqs_reward = np.concatenate((seqs_reward, rewards[dir_id]))
+            seqs_reward = np.append(seqs_reward, rewards[dir_id])
         else:
-            seqs_stack = np.concatenate((seqs_stack, frame_stack), axis=3)
-            seqs_reward = np.concatenate((seqs_reward, rewards[dir_id]))
+            seqs_stack = np.append(seqs_stack, frame_stack, axis=3)
+            seqs_reward = np.append(seqs_reward, rewards[dir_id])
 
     seqs_stack_XY = (seqs_stack, seqs_reward)
     file_name = "pickle_seq_stack_XY_test1_tuple"

@@ -69,8 +69,8 @@ if train_test == 0:
             all_seqs_stack_X = train_X
             all_seqs_stack_Y = train_Y
         else:
-            all_seqs_stack_X = np.concatenate((all_seqs_stack_X, train_X), axis=0)
-            all_seqs_stack_Y = np.concatenate((all_seqs_stack_Y,train_Y))
+            all_seqs_stack_X = np.append(all_seqs_stack_X, train_X, axis=0)
+            all_seqs_stack_Y = np.append(all_seqs_stack_Y, train_Y)
 
     input_shape = train_X[0, :, :, :].shape
     # print(input_shape)
