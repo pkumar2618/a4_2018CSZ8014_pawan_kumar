@@ -47,38 +47,15 @@ if train_test == 0:
     train_X = np.array([])
     train_Y = np.array([])
 
-    for eps in episodes:
-        seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
-        m_samples = seqs_stack_X.shape[3]
-
-        m_train = int(m_samples*0.1)
-        if m_train == 0:
-            m_train = 1
-
-        train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
-        train_Y = seqs_stack_Y[:m_train]
-        # print(train_X.shape)
-        # # # see the images first few
-        # for i in range(1, 10):
-        #     for j in range(0, 5):
-        #         cv2.imshow('grayed image', train_X[i,:,:,j])
-        #         cv2.waitKey(0)
-        #     print(train_Y[i])
-
-        if all_seqs_stack_X.size == 0:
-            all_seqs_stack_X = train_X
-            all_seqs_stack_Y = train_Y
-        else:
-            all_seqs_stack_X = np.concatenate((all_seqs_stack_X, train_X), axis=0)
-            all_seqs_stack_Y = np.concatenate((all_seqs_stack_Y,train_Y))
-
-    input_shape = train_X[0, :, :, :].shape
-    # print(input_shape)
-    epochs = 25
+    epochs = 20
     batch_size = 50
     train_X = all_seqs_stack_X
     train_Y = all_seqs_stack_Y
-    m_samples = train_X.shape[0]
+
+    seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, episodes[0])
+    m_samples = seqs_stack_X.shape[3]
+    train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_samples)])
+    input_shape = train_X[0, :, :, :].shape
 
     ## creating Model Architecture
     model = model_architecture(input_shape)
@@ -87,23 +64,60 @@ if train_test == 0:
     # # model configuration
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    # # model fitting
-    training_history = model.fit(train_X, train_Y, batch_size=batch_size, epochs=epochs, validation_split=0.1)
+    try:
+        ###
+        for epoch in range(20):
+            for eps in episodes:
+                seqs_stack_X, seqs_stack_Y = load_seqs_stack_XY_balanced(start_path, eps)
+                m_samples = seqs_stack_X.shape[3]
 
-    # # evaluate model
-    scores = model.evaluate(train_X, train_Y, verbose=0)
-    print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
+                m_train = int(m_samples * 1)
+                if m_train == 0:
+                    m_train = 1
 
-    # serialize model to JSON
-    file_json = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'.json')
-    model_json = model.to_json()
-    with open(file_json, "w") as json_file:
-        json_file.write(model_json)
+                train_X = np.array([seqs_stack_X[:, :, :, i] for i in range(m_train)])
+                train_Y = seqs_stack_Y[:m_train]
 
-    # serialize weights to HDF5
-    file_weight = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'weights.h5')
-    model.save_weights(file_weight)
-    print("Saved model to disk")
+                # # model fitting
+                model.fit(train_X, train_Y, batch_size=batch_size, epochs=epoch + 1,
+                                             initial_epoch=epoch, shuffle=True)
+
+                # if all_seqs_stack_X.size == 0:
+                #     all_seqs_stack_X = train_X
+                #     all_seqs_stack_Y = train_Y
+                # else:
+                #     all_seqs_stack_X = np.append(all_seqs_stack_X, train_X, axis=0)
+                #     all_seqs_stack_Y = np.append(all_seqs_stack_Y, train_Y)
+
+        # # evaluate model
+        # scores = model.evaluate(train_X, train_Y, verbose=0)
+        # print("%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
+
+        # serialize model to JSON
+        file_json = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'.json')
+        model_json = model.to_json()
+        with open(file_json, "w") as json_file:
+            json_file.write(model_json)
+
+        # serialize weights to HDF5
+        file_weight = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d'%(epochs, batch_size, m_samples)+'weights.h5')
+        model.save_weights(file_weight)
+        print("Saved model to disk")
+
+    except KeyboardInterrupt:
+        # serialize model to JSON
+        file_json = os.path.join(start_path,
+                                 'cnn_32_64_2k_binary_e%d_b%d_size_%d' % (epochs, batch_size, m_samples) + '.json')
+        model_json = model.to_json()
+        with open(file_json, "w") as json_file:
+            json_file.write(model_json)
+
+        # serialize weights to HDF5
+        file_weight = os.path.join(start_path, 'cnn_32_64_2k_binary_e%d_b%d_size_%d' % (
+        epochs, batch_size, m_samples) + 'weights.h5')
+        model.save_weights(file_weight)
+        print("Saved model to disk")
+
 
     # # load json and create model
     # json_file = open(file_json, 'r')
@@ -123,30 +137,30 @@ if train_test == 0:
 
 
     # # plotting accuracy
-    train_acc = training_history.history['acc']
-    val_acc = training_history.history['val_acc']
-    train_loss = training_history.history['loss']
-    val_loss = training_history.history['val_acc']
-    epoch_list = range(1, len(train_acc) + 1)
+    # train_acc = training_history.history['acc']
+    # val_acc = training_history.history['val_acc']
+    # train_loss = training_history.history['loss']
+    # val_loss = training_history.history['val_acc']
+    # epoch_list = range(1, len(train_acc) + 1)
 
-    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
-    line1 = ax1.plot(epoch_list, train_acc, label='train accuracy')
-    line2 = ax1.plot(epoch_list, val_acc, label='validation accuracy')
-    ax1.legend()
-    ax1.set_xlabel("epach")
-    ax1.set_ylabel("accuracy")
-    ax1.set_title("train and validation accuracy")
+    # fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+    # line1 = ax1.plot(epoch_list, train_acc, label='train accuracy')
+    # line2 = ax1.plot(epoch_list, val_acc, label='validation accuracy')
+    # ax1.legend()
+    # ax1.set_xlabel("epach")
+    # ax1.set_ylabel("accuracy")
+    # ax1.set_title("train and validation accuracy")
 
-    line3 = ax2.plot(epoch_list, train_loss, label='train loss')
-    line4 = ax2.plot(epoch_list, val_loss, label='validation loss')
-    ax2.legend()
-    ax2.set_xlabel("epoch")
-    ax2.set_ylabel("loss")
-    ax2.set_title("train and validation loss")
-
-    plt.tight_layout()
-    fig_name = os.path.join(start_path, "cnn_loss_curve_size_e%d_b%d_size_%d"%(epochs, batch_size, m_samples)+".png")
-    plt.savefig(fig_name, format='png')
+    # line3 = ax2.plot(epoch_list, train_loss, label='train loss')
+    # line4 = ax2.plot(epoch_list, val_loss, label='validation loss')
+    # ax2.legend()
+    # ax2.set_xlabel("epoch")
+    # ax2.set_ylabel("loss")
+    # ax2.set_title("train and validation loss")
+    #
+    # plt.tight_layout()
+    # fig_name = os.path.join(start_path, "cnn_loss_curve_size_e%d_b%d_size_%d"%(epochs, batch_size, m_samples)+".png")
+    # plt.savefig(fig_name, format='png')
 #    plt.show()
 
 
@@ -231,12 +245,14 @@ if train_test == 7:
     all_ids = np.array([])
     all_prediction = np.array([])
     dir_batch = np.array([])
-    for i in range(0, len(dirs), 500):
-        try:
-            dir_batch = dirs[0:500]
-        except IndexError:
+    step_size = 5000
+    for i in range(0, len(dirs), step_size):
+        if i + step_size <= len(dirs):
+            dir_batch = dirs[i:(i+step_size)]
+        else:
             dir_batch = dirs[i: len(dirs)]
-        print("now taking batch: %d" %i)
+
+        # print("now taking batch: %d" %i)
         seqs_stack_X, episode_ID = dirID_to_seqs_stack_X_ID(start_path, dir_batch)
 
         # changing the channel for sequences
@@ -254,12 +270,19 @@ if train_test == 7:
         test_Y_pred = (test_Y_pred >= 0.5).astype(int)
         test_Y_pred = test_Y_pred.reshape(-1)
         episode_ID = episode_ID.reshape(-1)
-        print("prediction complete for batch: %d" %i)
-        all_ids = np.append(all_ids, episode_ID)
-        all_prediction = np.append(all_prediction, test_Y_pred)
+        # print("prediction complete for batch: %d" %i)
 
-    predicted_Y = pd.Series(test_Y_pred, name="model_prediction")
-    IDs = pd.Series(all_ids, name="ID")
-    ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
-    file_name = os.path.join(start_path, "result_ID_Y")
-    ID_pred_Y.to_csv(file_name, index=False)
+        predicted_Y = pd.Series(test_Y_pred, name="Prediction")
+        IDs = pd.Series(episode_ID, name="id")
+        ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
+        file_name = os.path.join(start_path, "result_ID_Y_%d" % i)
+        ID_pred_Y.to_csv(file_name, index=False)
+
+        # all_ids = np.append(all_ids, episode_ID)
+        # all_prediction = np.append(all_prediction, test_Y_pred)
+
+    # predicted_Y = pd.Series(all_prediction, name="Prediction")
+    # IDs = pd.Series(all_ids, name="id")
+    # ID_pred_Y = pd.concat((IDs, predicted_Y), axis=1)
+    # file_name = os.path.join(start_path, "result_ID_Y_run2")
+    # ID_pred_Y.to_csv(file_name, index=False)
